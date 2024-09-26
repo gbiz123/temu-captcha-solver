@@ -11,18 +11,18 @@ def rotate_angle_from_style(style: str) -> float:
 
 
 def xy_to_proportional_point(
-        x: float,
-        y: float,
+        x_in_container: float,
+        y_in_container: float,
         container_width: float,
-        container_height: float
+        container_height: float,
     ) -> ProportionalPoint:
     """Convert an x, y pair into a propotional point where the 
     resulting x and y proportions are the fraction of the width
     and height respectively.
     """
     return ProportionalPoint(
-        proportion_x= x / container_width,
-        proportion_y= y / container_height,
+        proportion_x = x_in_container / container_width,
+        proportion_y = y_in_container / container_height,
     )
 
 

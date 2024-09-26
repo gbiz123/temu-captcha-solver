@@ -1,9 +1,10 @@
+from typing import Any
 import requests
 import base64
 
 from undetected_chromedriver import logging
 
-def download_image_b64(url: str, headers: dict | None = None, proxy: str | None = None) -> str:
+def download_image_b64(url: str, headers: dict[str, Any] | None = None, proxy: str | None = None) -> str:
     """Download an image from URL and return as base64 encoded string"""
     if proxy:
         proxies = {"http": proxy, "https": proxy}

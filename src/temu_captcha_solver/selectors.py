@@ -5,7 +5,7 @@ ARCED_SLIDE_PIECE_IMAGE_SELECTOR = "#img-button > img"
 ARCED_SLIDE_BUTTON_SELECTOR = "#slide-button"
 
 ARCED_SLIDE_SELECTORS = ["#img-button"]
-PUZZLE_SELECTORS = []
+PUZZLE_SELECTORS: list[str] = []
 CAPTCHA_WRAPPERS = ["#verification"]
 
 
