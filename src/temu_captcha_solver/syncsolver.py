@@ -1,10 +1,12 @@
 """Abstract base class for temu Captcha Solvers"""
 
+import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Literal
 
-from undetected_chromedriver import logging
+from temu_captcha_solver.captchatype import CaptchaType
+
+LOGGER = logging.getLogger(__name__)
 
 class SyncSolver(ABC):
 
@@ -17,13 +19,13 @@ class SyncSolver(ABC):
         """
         for _ in range(retries):
             if not self.captcha_is_present(captcha_detect_timeout):
-                logging.debug("Captcha is not present")
+                LOGGER.debug("Captcha is not present")
                 return
             else:
                 match self.identify_captcha():
-                    case "arced_slide": 
+                    case CaptchaType.ARCED_SLIDE:
                         self.solve_arced_slide()
-                    case "puzzle": 
+                    case CaptchaType.PUZZLE:
                         self.solve_puzzle()
             if self.captcha_is_not_present(timeout=5):
                 return
@@ -39,7 +41,7 @@ class SyncSolver(ABC):
         pass
 
     @abstractmethod
-    def identify_captcha(self) -> Literal["arced_slide", "puzzle"]:
+    def identify_captcha(self) -> CaptchaType:
         pass
 
     @abstractmethod

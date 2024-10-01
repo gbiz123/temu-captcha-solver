@@ -10,6 +10,8 @@ from playwright.async_api import FloatRect, Locator, Page, expect
 from playwright.async_api import TimeoutError
 import asyncio
 
+from temu_captcha_solver.captchatype import CaptchaType
+
 from .selectors import (
     ARCED_SLIDE_BAR_SELECTOR,
     ARCED_SLIDE_BUTTON_SELECTOR,
@@ -23,6 +25,7 @@ from .selectors import (
 
 from .geometry import (
     get_center,
+    piece_is_not_moving,
     rotate_angle_from_style,
     xy_to_proportional_point
 ) 
@@ -37,10 +40,14 @@ from .asyncsolver import AsyncSolver
 from .api import ApiClient
 
 
+LOGGER = logging.getLogger(__name__)
+
 class AsyncPlaywrightSolver(AsyncSolver):
 
     client: ApiClient
     page: Page
+
+    STEP_SIZE_PIXELS = 1
 
     def __init__(
             self,
@@ -73,14 +80,14 @@ class AsyncPlaywrightSolver(AsyncSolver):
             return False
 
     @override
-    async def identify_captcha(self) -> Literal["puzzle", "arced_slide"]:
+    async def identify_captcha(self) -> CaptchaType:
         for _ in range(15):
             if await self._any_selector_in_list_present(PUZZLE_SELECTORS):
-                logging.debug("detected puzzle")
-                return "puzzle"
+                LOGGER.debug("detected puzzle")
+                return CaptchaType.PUZZLE
             elif await self._any_selector_in_list_present(ARCED_SLIDE_SELECTORS):
-                logging.debug("detected arced slide")
-                return "arced_slide"
+                LOGGER.debug("detected arced slide")
+                return CaptchaType.ARCED_SLIDE
             else:
                 await asyncio.sleep(2)
         raise ValueError("Neither puzzle, or arced slide was present")
@@ -104,58 +111,57 @@ class AsyncPlaywrightSolver(AsyncSolver):
         
         Determines slider trajectory by dragging the slider element across the entire box,
         and computing the ArcedSlideTrajectoryElement at each location."""
-        if not await self._any_selector_in_list_present([ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR]):
-            logging.debug("Went to solve arced slide but " + ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR + "was not present")
-            return
         slide_button_locator = self.page.locator(ARCED_SLIDE_BUTTON_SELECTOR)
-        slider_piece_locator = self.page.locator(ARCED_SLIDE_PIECE_CONTAINER_SELECTOR)
-        slide_bar_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_BAR_SELECTOR)
-        slide_bar_width = slide_bar_bounding_box["width"]
-        puzzle_img_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         await self._move_mouse_to_element_center(slide_button_locator)
         await self.page.mouse.down()
-        trajectory: list[ArcedSlideTrajectoryElement] = []
-        step_size_pixels = 1
-
-        # get trajectory
         slide_button_box = await self._get_element_bounding_box(ARCED_SLIDE_BUTTON_SELECTOR)
         start_x = slide_button_box["x"]
         start_y = slide_button_box["y"]
-        for pixel in range(0, int(slide_bar_width), step_size_pixels):
-            await self.page.mouse.move(start_x + pixel, start_y)
-            trajectory.append(
-                await self._get_arced_slide_trajectory_element(
-                    pixel,
-                    puzzle_img_bounding_box,
-                    slider_piece_locator
-                )
-            )
+        request = await self._gather_arced_slide_request_data(start_x, start_y)
+        solution = self.client.arced_slide(request)
+        await self._drag_mouse_horizontal_with_overshoot(solution.pixels_from_slider_origin, start_x, start_y)
+        await self.page.mouse.up()
 
-        # move back to piece center
-        # await self._move_mouse_to_element_center(slide_button_locator) 
-        #
-        # send request
+    
+    async def _gather_arced_slide_request_data(self, slide_button_center_x: float, slide_button_center_y: float) -> ArcedSlideCaptchaRequest:
+        """Get the images and trajectory for arced slide request"""
         puzzle = await self.get_b64_img_from_src(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         piece = await self.get_b64_img_from_src(ARCED_SLIDE_PIECE_IMAGE_SELECTOR)
-        request = ArcedSlideCaptchaRequest(
+        trajectory = await self._get_slide_piece_trajectory(slide_button_center_x, slide_button_center_y)
+        return ArcedSlideCaptchaRequest(
             puzzle_image_b64=puzzle,
             piece_image_b64=piece,
             slide_piece_trajectory=trajectory
         )
-        with open("myreq.json", "w") as f:
-            json.dump(request.model_dump(), f)
-        solution = self.client.arced_slide(request)
 
-        # move mouse back to correct location
-        # slide_x_proportion is just the number of pixels traveled to get to the solution. 
-        # The name will be changed to "x_location" or something
-        await self.page.mouse.move(start_x + solution.slide_x_proportion, start_y, steps=100)
 
-        await self.page.mouse.up()
-        if await self.captcha_is_not_present(timeout=5):
-            return
-        else:
-            await asyncio.sleep(5)
+    async def _get_slide_piece_trajectory(self, slide_button_center_x: float, slide_button_center_y: float) -> list[ArcedSlideTrajectoryElement]:
+        """Sweep the button across the bar to determine the trajectory of the slide piece.
+        Clicks and drags box, but does not release. Must pass the coordinates of the slide button."""
+        slider_piece_locator = self.page.locator(ARCED_SLIDE_PIECE_CONTAINER_SELECTOR)
+        slide_bar_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_BAR_SELECTOR)
+        slide_bar_width = slide_bar_bounding_box["width"]
+        puzzle_img_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
+        trajectory: list[ArcedSlideTrajectoryElement] = []
+
+        times_piece_did_not_move = 0
+        for pixel in range(0, int(slide_bar_width), self.STEP_SIZE_PIXELS):
+            await self.page.mouse.move(slide_button_center_x + pixel, slide_button_center_y - pixel)  # - pixel is to drag it diagonally
+            trajectory_element = await self._get_arced_slide_trajectory_element(
+                pixel,
+                puzzle_img_bounding_box,
+                slider_piece_locator
+            )
+            trajectory.append(trajectory_element)
+            if not len(trajectory) > 100:
+                continue
+            if piece_is_not_moving(trajectory):
+                times_piece_did_not_move += 1
+            else:
+                times_piece_did_not_move = 0
+            if times_piece_did_not_move >= 10:
+                break
+        return trajectory
 
     async def _click_proportional(
             self,
@@ -182,34 +188,21 @@ class AsyncPlaywrightSolver(AsyncSolver):
         await self.page.mouse.up()
         await asyncio.sleep(random.randint(1, 10) / 11)
 
-    async def _drag_element_horizontal_with_overshoot(self, css_selector: str, x: int, frame_selector: str | None = None) -> None:
-        if frame_selector:
-            e = self.page.frame_locator(frame_selector).locator(css_selector)
-        else:
-            e = self.page.locator(css_selector)
-        box = await e.bounding_box()
-        if not box:
-            raise AttributeError("Element had no bounding box")
-        start_x = (box["x"] + (box["width"] / 1.337))
-        start_y = (box["y"] +  (box["height"] / 1.337))
-        await self.page.mouse.move(start_x, start_y)
-        await asyncio.sleep(random.randint(1, 10) / 11)
-        await self.page.mouse.down()
-        await asyncio.sleep(random.randint(1, 10) / 11)
-        await self.page.mouse.move(start_x + x, start_y, steps=100)
-        overshoot = random.choice([1, 2, 3, 4])
-        await self.page.mouse.move(start_x + x + overshoot, start_y + overshoot, steps=100) # overshoot forward
-        await self.page.mouse.move(start_x + x, start_y, steps=75) # overshoot back
-        await asyncio.sleep(0.001)
+    async def _drag_mouse_horizontal_with_overshoot(self, x_distance: int, start_x_coord: float, start_y_coord: float) -> None:
+        await self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=100)
+        overshoot = random.choice([1, 2, 3])
+        await self.page.mouse.move(start_x_coord + x_distance + overshoot, start_y_coord + overshoot, steps=100) # overshoot forward
+        await self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=75) # overshoot back
+        await asyncio.sleep(0.2)
         await self.page.mouse.up()
 
     async def _any_selector_in_list_present(self, selectors: list[str]) -> bool:
         for selector in selectors:
             for ele in await self.page.locator(selector).all():
                 if await ele.is_visible():
-                    logging.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
+                    LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
                     return True
-        logging.debug("No selector in list found: " + ", ".join(selectors))
+        LOGGER.debug("No selector in list found: " + ", ".join(selectors))
         return False
 
     async def _get_arced_slide_trajectory_element(
@@ -239,9 +232,9 @@ class AsyncPlaywrightSolver(AsyncSolver):
         x_in_container = piece_center_x - container_x
         y_in_container = piece_center_y - container_y
         piece_center = xy_to_proportional_point(x_in_container, y_in_container, container_width, container_height)
-        logging.debug(f"top_corner={piece_left}, {piece_top}, center={piece_center_x}, {piece_center_y}, ctr_in_container={x_in_container}, {y_in_container}  prop_center={piece_center.proportion_x}, {piece_center.proportion_y}, container_size={container_width}, {container_height}")
+        LOGGER.debug(f"top_corner={piece_left}, {piece_top}, center={piece_center_x}, {piece_center_y}, ctr_in_container={x_in_container}, {y_in_container}  prop_center={piece_center.proportion_x}, {piece_center.proportion_y}, container_size={container_width}, {container_height}")
         return ArcedSlideTrajectoryElement(
-            slider_button_proportion_x=current_slider_pixel,
+            pixels_from_slider_origin=current_slider_pixel,
             piece_rotation_angle=rotate_angle,
             piece_center=piece_center
         )

@@ -102,7 +102,7 @@ class SeleniumSolver(SyncSolver):
             slide_piece_trajectory=trajectory
         )
         solution = self.client.arced_slide(request)
-        distance = self._compute_puzzle_slide_distance(solution.slide_x_proportion)
+        distance = self._compute_puzzle_slide_distance(solution.pixels_from_slider_origin)
         self._drag_element_horizontal_with_overshoot(ARCED_SLIDE_BUTTON_SELECTOR, distance)
         if self.captcha_is_not_present(timeout=5):
             return
@@ -222,7 +222,7 @@ class SeleniumSolver(SyncSolver):
         piece_center_x, piece_center_y = get_center(left, top, width, height)
         piece_center = xy_to_proportional_point(piece_center_x, piece_center_y, container_width, container_height)
         return ArcedSlideTrajectoryElement(
-            slider_button_proportion_x=current_slider_pixel / slide_bar_width,
+            pixels_from_slider_origin=current_slider_pixel / slide_bar_width,
             piece_rotation_angle=rotate_angle,
             piece_center=piece_center
         )

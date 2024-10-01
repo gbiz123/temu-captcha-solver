@@ -1,10 +1,14 @@
 """Abstract base class for Temu Captcha Async Solvers"""
 
+import logging
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from undetected_chromedriver import logging
+
+from temu_captcha_solver.captchatype import CaptchaType
+
+LOGGER = logging.getLogger(__name__)
 
 class AsyncSolver(ABC):
 
@@ -17,13 +21,13 @@ class AsyncSolver(ABC):
         """
         for _ in range(retries):
             if not await self.captcha_is_present(captcha_detect_timeout):
-                logging.debug("Captcha is not present")
+                LOGGER.debug("Captcha is not present")
                 return
             else:
                 match await self.identify_captcha():
-                    case "arced_slide": 
+                    case CaptchaType.ARCED_SLIDE: 
                         await self.solve_arced_slide()
-                    case "puzzle": 
+                    case CaptchaType.PUZZLE: 
                         await self.solve_puzzle()
             if await self.captcha_is_not_present(timeout=5):
                 return
@@ -39,7 +43,7 @@ class AsyncSolver(ABC):
         pass
 
     @abstractmethod
-    async def identify_captcha(self) -> Literal["arced_slide", "puzzle"]:
+    async def identify_captcha(self) -> CaptchaType:
         pass
 
     @abstractmethod

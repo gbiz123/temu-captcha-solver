@@ -1,9 +1,10 @@
-# TikTok Captcha Solver API
-This project is the [SadCaptcha TikTok Captcha Solver](https://www.sadcaptcha.com?ref=ghclientrepo) API client.
+# Temu Captcha Solver API
+This project is the [SadCaptcha Temu Captcha Solver](https://www.sadcaptcha.com?ref=temughclientrepo) API client.
 The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or Async Playwright app as simple as one line of code.
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
-This tool works on both TikTok and Douyin and can solve any of the four captcha challenges pictured below:
+This tool is a work in progress and currently only works on the arced slide captcha challenge. 
+More Temu captcha's are coming soon.
 
 <div align="center">
     <img src="https://sadcaptcha.b-cdn.net/tiktok3d.webp" width="100" alt="TikTok Captcha Solver">
@@ -24,7 +25,7 @@ This tool works on both TikTok and Douyin and can solve any of the four captcha 
 ## Installation
 This project can be installed with `pip`. Just run the following command:
 ```
-pip install tiktok-captcha-solver
+pip install temu-captcha-solver
 ```
 
 ## Selenium Client 
@@ -33,7 +34,7 @@ This turns the entire captcha detection, solution, retry, and verification proce
 It is the recommended method if you are using Playwright.
 
 ```py
-from tiktok_captcha_solver import SeleniumSolver
+from temu_captcha_solver import SeleniumSolver
 from selenium_stealth import stealth
 import undetected_chromedriver as uc
 
@@ -41,7 +42,7 @@ driver = uc.Chrome(headless=False) # Use default undetected_chromedriver configu
 api_key = "YOUR_API_KEY_HERE"
 sadcaptcha = SeleniumSolver(driver, api_key)
 
-# Selenium code that causes a TikTok or Douyin captcha...
+# Selenium code that causes a Temu captcha...
 
 sadcaptcha.solve_captcha_if_present()
 ```
@@ -56,7 +57,7 @@ It is the recommended method if you are using playwright.
 
 
 ```py
-from tiktok_captcha_solver import PlaywrightSolver
+from temu_captcha_solver import PlaywrightSolver
 from playwright.sync_api import Page, sync_playwright
 from playwright_stealth import stealth_sync, StealthConfig
 
@@ -68,7 +69,7 @@ with sync_playwright() as p:
     config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
     stealth_sync(page, config) # Use correct playwright_stealth configuration!
     
-    # Playwright code that causes a TikTok or Douyin captcha...
+    # Playwright code that causes a Temu captcha...
 
     sadcaptcha = PlaywrightSolver(page, api_key)
     sadcaptcha.solve_captcha_if_present()
@@ -85,7 +86,7 @@ It is the recommended method if you are using async playwright.
 
 ```py
 import asyncio
-from tiktok_captcha_solver import AsyncPlaywrightSolver
+from temu_captcha_solver import AsyncPlaywrightSolver
 from playwright.async_api import Page, async_playwright
 from playwright_stealth import stealth_async, StealthConfig
 
@@ -98,7 +99,7 @@ async def main()
         config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
         await stealth_async(page, config) # Use correct playwright_stealth configuration!
         
-        # Playwright code that causes a TikTok or Douyin captcha...
+        # Playwright code that causes a Temu captcha...
 
         sadcaptcha = AsyncPlaywrightSolver(page, api_key)
         await sadcaptcha.solve_captcha_if_present()
@@ -139,34 +140,6 @@ async def main()
         sadcaptcha = AsyncPlaywrightSolver(page, api_key, headers=headers, proxy=proxy)
         await sadcaptcha.solve_captcha_if_present()
 ```
-
-## API Client
-If you are not using Selenium or Playwright, you can still import and use the API client to help you make calls to SadCaptcha
-```py
-from tiktok_captcha_solver import ApiClient
-
-api_key = "YOUR_API_KEY_HERE"
-client = ApiClient(api_key)
-
-# Rotate
-res = client.rotate("base64 encoded outer", "base64 encoded inner")
-
-# Puzzle
-res = client.puzzle("base64 encoded puzzle", "base64 encoded piece")
-
-# Shapes
-res = client.shapes("base64 encoded shapes image")
-
-# Icon (Video upload)
-res = client.icon("Which of these objects... ?", base64 encoded icon image")
-```
-
-## Troubleshooting
-### Captcha solved but still says Verification failed?
-This common problem is due to your browser settings. 
-If using Selenium, you must use `undetected_chromedriver` with the **default** settings.
-If you are using Playwright, you must use the `playwright_stealth` package with the **default** settings.
-Do not change the user agent, or modify any other browser characteristics as this is easily detected and flagged as suspicious behavior.
 
 ## Contact
 - Homepage: https://www.sadcaptcha.com/

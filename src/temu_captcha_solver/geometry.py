@@ -1,6 +1,6 @@
 import re
 
-from temu_captcha_solver.models import ProportionalPoint
+from temu_captcha_solver.models import ArcedSlideTrajectoryElement, ProportionalPoint
 
 def rotate_angle_from_style(style: str) -> float:
     """Extract the rotate value from the css style attribute"""
@@ -32,3 +32,11 @@ def get_center(left_x: float, top_y: float, width: float, height: float) -> tupl
     center_y = top_y + (height / 2)
     return center_x, center_y
 
+
+def piece_is_not_moving(trajectory: list[ArcedSlideTrajectoryElement]) -> bool:
+    """Return True if the last two trajectory elements have the same proportion_x, 
+    indicating that the piece is not moving"""
+    if trajectory[-2].piece_center.proportion_x == trajectory[-1].piece_center.proportion_x:
+        return True
+    else:
+        return False
