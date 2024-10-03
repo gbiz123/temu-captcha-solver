@@ -3,15 +3,13 @@ This project is the [SadCaptcha Temu Captcha Solver](https://www.sadcaptcha.com?
 The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or Async Playwright app as simple as one line of code.
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
-This tool is a work in progress and currently only works on the arced slide captcha challenge. 
-More Temu captcha's are coming soon.
+The end goal of this tool is to solve every single Temu captcha. 
+Currently we are able to solve the following challenges:
 
 <div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/tiktok3d.webp" width="100" alt="TikTok Captcha Solver">
-    <img src="https://sadcaptcha.b-cdn.net/tiktokrotate.webp" width="100" alt="TikTok Captcha Solver">
-    <img src="https://sadcaptcha.b-cdn.net/tiktokpuzzle.webp" width="100" alt="TikTok Captcha Solver">
-    <img src="https://sadcaptcha.b-cdn.net/tiktokicon.webp" width="100" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="350" alt="TikTok Captcha Solver">
     <br/>
+    1. Arced Slide Challenge
 </div>
 
 ## Requirements
@@ -44,7 +42,7 @@ sadcaptcha = SeleniumSolver(driver, api_key)
 
 # Selenium code that causes a Temu captcha...
 
-sadcaptcha.solve_captcha_if_present()
+sadcaptcha.solve_captcha_if_present(retries=5)
 ```
 
 It is crucial that you use `undetected_chromedriver` with the default configuration, instead of the standard Selenium chromedriver.
@@ -72,7 +70,7 @@ with sync_playwright() as p:
     # Playwright code that causes a Temu captcha...
 
     sadcaptcha = PlaywrightSolver(page, api_key)
-    sadcaptcha.solve_captcha_if_present()
+    sadcaptcha.solve_captcha_if_present(retries=5)
 ```
 It is crucial that users of the Playwright client also use `playwright-stealth` with the configuration specified above.
 Failure to use the `playwright-stealth` plugin will result in "Verification failed" when attempting to solve the captcha.
@@ -102,7 +100,7 @@ async def main()
         # Playwright code that causes a Temu captcha...
 
         sadcaptcha = AsyncPlaywrightSolver(page, api_key)
-        await sadcaptcha.solve_captcha_if_present()
+        await sadcaptcha.solve_captcha_if_present(retries=5)
 
 asyncio.run(main())
 ```
@@ -129,7 +127,7 @@ with sync_playwright() as p:
     page = browser.new_page()
     stealth_sync(page) # Use default playwright_stealth configuration!
     sadcaptcha = PlaywrightSolver(page, api_key, proxy=proxy, headers=headers)
-    sadcaptcha.solve_captcha_if_present()
+    sadcaptcha.solve_captcha_if_present(retries=5)
 
 # With Async PlaywrightSolver
 async def main()
@@ -138,7 +136,7 @@ async def main()
         page = await browser.new_page()
         await stealth_async(page) # Use default playwright_stealth configuration!
         sadcaptcha = AsyncPlaywrightSolver(page, api_key, headers=headers, proxy=proxy)
-        await sadcaptcha.solve_captcha_if_present()
+        await sadcaptcha.solve_captcha_if_present(retries=5)
 ```
 
 ## Contact

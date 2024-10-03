@@ -1,16 +1,11 @@
 """This class handles the captcha solving for playwright users"""
 
-import json
-import base64
 import logging
-from math import pi
 import random
-from typing import Any, Literal, override
+from typing import Any, override
 from playwright.async_api import FloatRect, Locator, Page, expect
 from playwright.async_api import TimeoutError
 import asyncio
-
-from temu_captcha_solver.captchatype import CaptchaType
 
 from .selectors import (
     ARCED_SLIDE_BAR_SELECTOR,
@@ -18,9 +13,7 @@ from .selectors import (
     ARCED_SLIDE_PIECE_CONTAINER_SELECTOR,
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
-    ARCED_SLIDE_SELECTORS,
     CAPTCHA_WRAPPERS,
-    PUZZLE_SELECTORS
 ) 
 
 from .geometry import (
@@ -35,7 +28,6 @@ from .models import (
     ArcedSlideTrajectoryElement
 ) 
 
-from .downloader import download_image_b64
 from .asyncsolver import AsyncSolver
 from .api import ApiClient
 
@@ -80,19 +72,6 @@ class AsyncPlaywrightSolver(AsyncSolver):
             return False
 
     @override
-    async def identify_captcha(self) -> CaptchaType:
-        for _ in range(15):
-            if await self._any_selector_in_list_present(PUZZLE_SELECTORS):
-                LOGGER.debug("detected puzzle")
-                return CaptchaType.PUZZLE
-            elif await self._any_selector_in_list_present(ARCED_SLIDE_SELECTORS):
-                LOGGER.debug("detected arced slide")
-                return CaptchaType.ARCED_SLIDE
-            else:
-                await asyncio.sleep(2)
-        raise ValueError("Neither puzzle, or arced slide was present")
-
-    @override
     async def solve_puzzle(self, retries: int = 3) -> None:
         """Temu puzzle is special because the pieces shift when pressing the slider button.
         Therefore we must send the pictures after pressing the button. """
@@ -121,6 +100,17 @@ class AsyncPlaywrightSolver(AsyncSolver):
         solution = self.client.arced_slide(request)
         await self._drag_mouse_horizontal_with_overshoot(solution.pixels_from_slider_origin, start_x, start_y)
         await self.page.mouse.up()
+
+
+    @override
+    async def any_selector_in_list_present(self, selectors: list[str]) -> bool:
+        for selector in selectors:
+            for ele in await self.page.locator(selector).all():
+                if await ele.is_visible():
+                    LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
+                    return True
+        LOGGER.debug("No selector in list found: " + ", ".join(selectors))
+        return False
 
     
     async def _gather_arced_slide_request_data(self, slide_button_center_x: float, slide_button_center_y: float) -> ArcedSlideCaptchaRequest:
@@ -195,15 +185,6 @@ class AsyncPlaywrightSolver(AsyncSolver):
         await self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=75) # overshoot back
         await asyncio.sleep(0.2)
         await self.page.mouse.up()
-
-    async def _any_selector_in_list_present(self, selectors: list[str]) -> bool:
-        for selector in selectors:
-            for ele in await self.page.locator(selector).all():
-                if await ele.is_visible():
-                    LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
-                    return True
-        LOGGER.debug("No selector in list found: " + ", ".join(selectors))
-        return False
 
     async def _get_arced_slide_trajectory_element(
             self,

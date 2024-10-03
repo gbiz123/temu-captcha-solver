@@ -5,6 +5,7 @@ import time
 from abc import ABC, abstractmethod
 
 from temu_captcha_solver.captchatype import CaptchaType
+from temu_captcha_solver.selectors import ARCED_SLIDE_SELECTORS, PUZZLE_SELECTORS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,16 +33,24 @@ class SyncSolver(ABC):
             else:
                 time.sleep(5)
 
+    def identify_captcha(self) -> CaptchaType:
+        for _ in range(30):
+            if self.any_selector_in_list_present(PUZZLE_SELECTORS):
+                LOGGER.debug("detected puzzle")
+                return CaptchaType.PUZZLE
+            elif self.any_selector_in_list_present(ARCED_SLIDE_SELECTORS):
+                LOGGER.debug("detected arced slide")
+                return CaptchaType.ARCED_SLIDE
+            else:
+                time.sleep(1)
+        raise ValueError("Neither puzzle, or arced slide was present")
+
     @abstractmethod
     def captcha_is_present(self, timeout: int = 15) -> bool:
         pass
 
     @abstractmethod
     def captcha_is_not_present(self, timeout: int = 15) -> bool:
-        pass
-
-    @abstractmethod
-    def identify_captcha(self) -> CaptchaType:
         pass
 
     @abstractmethod
@@ -54,4 +63,8 @@ class SyncSolver(ABC):
 
     @abstractmethod
     def get_b64_img_from_src(self, selector: str) -> str:
+        pass
+
+    @abstractmethod
+    def any_selector_in_list_present(self, selectors: list[str]) -> bool:
         pass

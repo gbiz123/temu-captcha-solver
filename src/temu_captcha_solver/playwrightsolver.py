@@ -1,24 +1,29 @@
 """This class handles the captcha solving for playwright users"""
 
+import logging
 import random
-import time
-from typing import Literal
+from typing import Any, override
 from playwright.sync_api import FloatRect, Locator, Page, expect
-from undetected_chromedriver import logging
+from playwright.sync_api import TimeoutError
+import time
 
-from .urls import ARCED_SLIDE_URL_PATTERN
+from .captchatype import CaptchaType
+from .syncsolver import SyncSolver
 
 from .selectors import (
     ARCED_SLIDE_BAR_SELECTOR,
     ARCED_SLIDE_BUTTON_SELECTOR,
+    ARCED_SLIDE_PIECE_CONTAINER_SELECTOR,
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
+    ARCED_SLIDE_SELECTORS,
     CAPTCHA_WRAPPERS,
     PUZZLE_SELECTORS
 ) 
 
 from .geometry import (
     get_center,
+    piece_is_not_moving,
     rotate_angle_from_style,
     xy_to_proportional_point
 ) 
@@ -28,21 +33,23 @@ from .models import (
     ArcedSlideTrajectoryElement
 ) 
 
-from .syncsolver import SyncSolver
 from .api import ApiClient
-from .downloader import download_image_b64
 
+
+LOGGER = logging.getLogger(__name__)
 
 class PlaywrightSolver(SyncSolver):
 
     client: ApiClient
     page: Page
 
+    STEP_SIZE_PIXELS = 1
+
     def __init__(
             self,
             page: Page,
             sadcaptcha_api_key: str,
-            headers: dict | None = None, 
+            headers: dict[str, Any] | None = None, 
             proxy: str | None = None
         ) -> None:
         self.page = page
@@ -50,14 +57,16 @@ class PlaywrightSolver(SyncSolver):
         self.headers = headers
         self.proxy = proxy
 
+    @override
     def captcha_is_present(self, timeout: int = 15) -> bool:
         try:
             captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
-            expect(captcha_locator.first).to_be_visible(timeout=timeout * 1000)
+            expect(captcha_locator.first).to_have_count(1, timeout=timeout * 1000)
             return True
         except (TimeoutError, AssertionError):
             return False
 
+    @override
     def captcha_is_not_present(self, timeout: int = 15) -> bool:
         try:
             captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
@@ -66,23 +75,13 @@ class PlaywrightSolver(SyncSolver):
         except (TimeoutError, AssertionError):
             return False
 
-    def identify_captcha(self) -> Literal["puzzle", "arced_slide"]:
-        for _ in range(15):
-            if self._any_selector_in_list_present(PUZZLE_SELECTORS):
-                logging.debug("detected puzzle")
-                return "puzzle"
-            elif ARCED_SLIDE_URL_PATTERN in self.page.url:
-                logging.debug("detected arced slide")
-                return "arced_slide"
-            else:
-                time.sleep(2)
-        raise ValueError("Neither puzzle, or arced slide was present")
-
+    @override
     def solve_puzzle(self, retries: int = 3) -> None:
         """Temu puzzle is special because the pieces shift when pressing the slider button.
         Therefore we must send the pictures after pressing the button. """
         raise NotImplementedError()
 
+    @override
     def solve_arced_slide(self) -> None:
         """Solves the arced slide puzzle. This challenge is similar to the puzzle
         challenge, but the puzzle piece travels in an arc, hence then name arced slide.
@@ -92,25 +91,71 @@ class PlaywrightSolver(SyncSolver):
         This function will get the b64 encoded images, and will 'sweep' the slide
         bar to determine the piece's trajectory. Then it sends the data to the API
         and consumes the response.
-        """
-        if not self._any_selector_in_list_present(["#captcha-verify-image"]):
-            logging.debug("Went to solve icon captcha but #captcha-verify-image was not present")
-            return
+        
+        Determines slider trajectory by dragging the slider element across the entire box,
+        and computing the ArcedSlideTrajectoryElement at each location."""
+        slide_button_locator = self.page.locator(ARCED_SLIDE_BUTTON_SELECTOR)
+        self._move_mouse_to_element_center(slide_button_locator)
+        self.page.mouse.down()
+        slide_button_box = self._get_element_bounding_box(ARCED_SLIDE_BUTTON_SELECTOR)
+        start_x = slide_button_box["x"]
+        start_y = slide_button_box["y"]
+        request = self._gather_arced_slide_request_data(start_x, start_y)
+        solution = self.client.arced_slide(request)
+        self._drag_mouse_horizontal_with_overshoot(solution.pixels_from_slider_origin, start_x, start_y)
+        self.page.mouse.up()
+
+
+    @override
+    def any_selector_in_list_present(self, selectors: list[str]) -> bool:
+        for selector in selectors:
+            for ele in self.page.locator(selector).all():
+                if ele.is_visible():
+                    LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
+                    return True
+        LOGGER.debug("No selector in list found: " + ", ".join(selectors))
+        return False
+
+    
+    def _gather_arced_slide_request_data(self, slide_button_center_x: float, slide_button_center_y: float) -> ArcedSlideCaptchaRequest:
+        """Get the images and trajectory for arced slide request"""
         puzzle = self.get_b64_img_from_src(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
-        piece = self.get_b64_img_from_src(ARCED_SLIDE_PIECE_SELECTOR)
-        trajectory = self._get_arced_slide_trajectory()
-        request = ArcedSlideCaptchaRequest(
+        piece = self.get_b64_img_from_src(ARCED_SLIDE_PIECE_IMAGE_SELECTOR)
+        trajectory = self._get_slide_piece_trajectory(slide_button_center_x, slide_button_center_y)
+        return ArcedSlideCaptchaRequest(
             puzzle_image_b64=puzzle,
             piece_image_b64=piece,
             slide_piece_trajectory=trajectory
         )
-        solution = self.client.arced_slide(request)
-        distance = self._compute_puzzle_slide_distance(solution.pixels_from_slider_origin)
-        self._drag_element_horizontal_with_overshoot(ARCED_SLIDE_BUTTON_SELECTOR, distance)
-        if self.captcha_is_not_present(timeout=5):
-            return
-        else:
-            time.sleep(5)
+
+
+    def _get_slide_piece_trajectory(self, slide_button_center_x: float, slide_button_center_y: float) -> list[ArcedSlideTrajectoryElement]:
+        """Sweep the button across the bar to determine the trajectory of the slide piece.
+        Clicks and drags box, but does not release. Must pass the coordinates of the slide button."""
+        slider_piece_locator = self.page.locator(ARCED_SLIDE_PIECE_CONTAINER_SELECTOR)
+        slide_bar_bounding_box = self._get_element_bounding_box(ARCED_SLIDE_BAR_SELECTOR)
+        slide_bar_width = slide_bar_bounding_box["width"]
+        puzzle_img_bounding_box = self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
+        trajectory: list[ArcedSlideTrajectoryElement] = []
+
+        times_piece_did_not_move = 0
+        for pixel in range(0, int(slide_bar_width), self.STEP_SIZE_PIXELS):
+            self.page.mouse.move(slide_button_center_x + pixel, slide_button_center_y - pixel)  # - pixel is to drag it diagonally
+            trajectory_element = self._get_arced_slide_trajectory_element(
+                pixel,
+                puzzle_img_bounding_box,
+                slider_piece_locator
+            )
+            trajectory.append(trajectory_element)
+            if not len(trajectory) > 100:
+                continue
+            if piece_is_not_moving(trajectory):
+                times_piece_did_not_move += 1
+            else:
+                times_piece_did_not_move = 0
+            if times_piece_did_not_move >= 10:
+                break
+        return trajectory
 
     def _click_proportional(
             self,
@@ -137,63 +182,17 @@ class PlaywrightSolver(SyncSolver):
         self.page.mouse.up()
         time.sleep(random.randint(1, 10) / 11)
 
-    def _drag_element_horizontal_with_overshoot(self, css_selector: str, x: int, frame_selector: str | None = None) -> None:
-        if frame_selector:
-            e = self.page.frame_locator(frame_selector).locator(css_selector)
-        else:
-            e = self.page.locator(css_selector)
-        box = e.bounding_box()
-        if not box:
-            raise AttributeError("Element had no bounding box")
-        start_x = (box["x"] + (box["width"] / 1.337))
-        start_y = (box["y"] +  (box["height"] / 1.337))
-        self.page.mouse.move(start_x, start_y)
-        time.sleep(random.randint(1, 10) / 11)
-        self.page.mouse.down()
-        time.sleep(random.randint(1, 10) / 11)
-        self.page.mouse.move(start_x + x, start_y, steps=100)
-        overshoot = random.choice([1, 2, 3, 4])
-        self.page.mouse.move(start_x + x + overshoot, start_y + overshoot, steps=100) # overshoot forward
-        self.page.mouse.move(start_x + x, start_y, steps=75) # overshoot back
-        time.sleep(0.001)
+    def _drag_mouse_horizontal_with_overshoot(self, x_distance: int, start_x_coord: float, start_y_coord: float) -> None:
+        self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=100)
+        overshoot = random.choice([1, 2, 3])
+        self.page.mouse.move(start_x_coord + x_distance + overshoot, start_y_coord + overshoot, steps=100) # overshoot forward
+        self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=75) # overshoot back
+        time.sleep(0.2)
         self.page.mouse.up()
-
-    def _any_selector_in_list_present(self, selectors: list[str]) -> bool:
-        for selector in selectors:
-            for ele in self.page.locator(selector).all():
-                if ele.is_visible():
-                    logging.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
-                    return True
-        logging.debug("No selector in list found: " + ", ".join(selectors))
-        return False
-
-    def _get_arced_slide_trajectory(self) -> list[ArcedSlideTrajectoryElement]:
-        """Determines slider trajectory by dragging the slider element across the entire box,
-        and computing the ArcedSlideTrajectoryElement at each location."""
-        slide_button_locator = self.page.locator(ARCED_SLIDE_BUTTON_SELECTOR)
-        slider_piece_locator = self.page.locator(ARCED_SLIDE_PIECE_SELECTOR)
-        slide_bar_width = self._get_element_width(ARCED_SLIDE_BAR_SELECTOR)
-        puzzle_img_bounding_box = self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
-        self._move_mouse_to_element_center(slide_button_locator)
-        self.page.mouse.down()
-        trajectory: list[ArcedSlideTrajectoryElement] = []
-        for pixel in range(0, int(slide_bar_width), 4):
-            self._move_mouse_to_element_center(slide_button_locator, x_offset=pixel)
-            trajectory.append(
-                self._get_arced_slide_trajectory_element(
-                    pixel,
-                    slide_bar_width,
-                    puzzle_img_bounding_box,
-                    slider_piece_locator
-                )
-            )
-        self.page.mouse.up()
-        return trajectory
 
     def _get_arced_slide_trajectory_element(
             self,
             current_slider_pixel: int,
-            slide_bar_width: float,
             large_img_bounding_box: FloatRect,
             slider_piece_locator: Locator, 
         ) -> ArcedSlideTrajectoryElement:
@@ -206,16 +205,21 @@ class PlaywrightSolver(SyncSolver):
         if not slider_piece_style:
             raise ValueError("Slider piece style was None")
         rotate_angle = rotate_angle_from_style(slider_piece_style)
-        top = slider_piece_bounding_box["x"]
-        left = slider_piece_bounding_box["y"]
+        piece_top = slider_piece_bounding_box["y"]
+        piece_left = slider_piece_bounding_box["x"]
         width = slider_piece_bounding_box["width"]
         height = slider_piece_bounding_box["height"]
+        piece_center_x, piece_center_y = get_center(piece_left, piece_top, width, height)
+        container_x = large_img_bounding_box["x"]
+        container_y = large_img_bounding_box["y"]
         container_width = large_img_bounding_box["width"]
         container_height = large_img_bounding_box["height"]
-        piece_center_x, piece_center_y = get_center(left, top, width, height)
-        piece_center = xy_to_proportional_point(piece_center_x, piece_center_y, container_width, container_height)
+        x_in_container = piece_center_x - container_x
+        y_in_container = piece_center_y - container_y
+        piece_center = xy_to_proportional_point(x_in_container, y_in_container, container_width, container_height)
+        LOGGER.debug(f"top_corner={piece_left}, {piece_top}, center={piece_center_x}, {piece_center_y}, ctr_in_container={x_in_container}, {y_in_container}  prop_center={piece_center.proportion_x}, {piece_center.proportion_y}, container_size={container_width}, {container_height}")
         return ArcedSlideTrajectoryElement(
-            pixels_from_slider_origin=current_slider_pixel / slide_bar_width,
+            pixels_from_slider_origin=current_slider_pixel,
             piece_rotation_angle=rotate_angle,
             piece_center=piece_center
         )
@@ -230,22 +234,18 @@ class PlaywrightSolver(SyncSolver):
         box = ele.bounding_box()
         if box is None:
             raise ValueError("Bounding box for element was none")
-        self.page.mouse.move(
-            *get_center(
-                box["x"] + x_offset,
-                box["y"] + y_offset,
-                box["width"],
-                box["height"]
-            )
-        )
+        x, y = get_center(box["x"], box["y"], box["width"], box["height"])
+        self.page.mouse.move(x + x_offset, y + y_offset)
 
+    @override
     def get_b64_img_from_src(self, selector: str) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
         e = self.page.locator(selector)
         url = e.get_attribute("src")
         if not url:
             raise ValueError("element " + selector + " had no url")
-        return url.split(",")[1]
+        _, data = url.split(",")
+        return data
 
     def _compute_puzzle_slide_distance(self, proportion_x: float) -> int:
         e = self.page.locator("#captcha-verify-image")

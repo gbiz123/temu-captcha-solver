@@ -3,10 +3,9 @@ import logging
 
 from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse
 
-class ApiClient:
+LOGGER = logging.getLogger(__name__)
 
-    _PUZZLE_URL: str
-    _ARCED_SLIDE_URL: str
+class ApiClient:
 
     def __init__(self, api_key: str) -> None:
         self._PUZZLE_URL = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=" + api_key
@@ -20,7 +19,7 @@ class ApiClient:
         }        
         resp = requests.post(self._PUZZLE_URL, json=data)
         result = resp.json()
-        logging.debug("Got API response: " + str(result))
+        LOGGER.debug("Got API response: " + str(result))
         return ArcedSlideCaptchaResponse(pixels_from_slider_origin=result.get("slideXProportion"))
 
     def arced_slide(self, request: ArcedSlideCaptchaRequest) -> ArcedSlideCaptchaResponse:
@@ -29,5 +28,5 @@ class ApiClient:
         slide button is not correlated with the trajectory."""
         resp = requests.post(self._ARCED_SLIDE_URL, json=request.model_dump())
         result = resp.json()
-        logging.debug("Got API response: " + str(result))
+        LOGGER.debug("Got API response: " + str(result))
         return ArcedSlideCaptchaResponse(pixels_from_slider_origin=result["pixelsFromSliderOrigin"])
