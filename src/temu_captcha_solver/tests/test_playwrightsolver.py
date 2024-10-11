@@ -13,7 +13,7 @@ def test_does_not_false_positive(caplog):
 
 proxy = {
     "server": "pr.oxylabs.io:7777",
-    "username": "customer-toughdata-cc-br",
+    "username": "customer-toughdata-cc-us",
     "password": "toughproxies"
 }
 

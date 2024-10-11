@@ -1,6 +1,7 @@
 """This class handles the captcha solving for selenium users"""
 
 import logging
+import math
 import random
 import time
 from typing import Any, Literal, override
@@ -14,6 +15,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from .captchatype import CaptchaType
 
 from .geometry import(
+    get_box_center,
     get_center,
     piece_is_not_moving,
     rotate_angle_from_style,
@@ -27,6 +29,10 @@ from .selectors import (
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
     CAPTCHA_WRAPPERS,
+    PUZZLE_BAR_SELECTOR,
+    PUZZLE_BUTTON_SELECTOR,
+    PUZZLE_PIECE_IMAGE_SELECTOR,
+    PUZZLE_PUZZLE_IMAGE_SELECTOR,
 ) 
  
 from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement
@@ -77,7 +83,25 @@ class SeleniumSolver(SyncSolver):
 
     @override
     def solve_puzzle(self) -> None:
-        raise NotImplementedError()
+        slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR)
+        actions = ActionChains(self.chromedriver)
+        _ = actions.move_to_element(slide_button) \
+                .click_and_hold()
+        start_distance = 10
+        for pixel in range(start_distance):
+            _ = actions.move_by_offset(1, 1)
+        actions.perform()
+        LOGGER.debug("dragged 10 pixels")
+        puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+        piece_image = self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
+        resp = self.client.puzzle(puzzle_image, piece_image)
+        slide_bar_width = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BAR_SELECTOR))["width"]
+        pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
+        LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
+        for pixel in range(start_distance, pixel_distance):
+            _ = actions.move_by_offset(1, 1)
+        actions.release().perform()
+        LOGGER.debug("done")
 
     @override
     def solve_arced_slide(self) -> None:

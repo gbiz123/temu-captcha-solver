@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 
 from temu_captcha_solver.captchatype import CaptchaType
-from temu_captcha_solver.selectors import ARCED_SLIDE_SELECTORS, PUZZLE_SELECTORS
+from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,10 +36,10 @@ class AsyncSolver(ABC):
 
     async def identify_captcha(self) -> CaptchaType:
         for _ in range(30):
-            if await self.any_selector_in_list_present(PUZZLE_SELECTORS):
+            if await self.any_selector_in_list_present(PUZZLE_UNIQUE_IDENTIFIERS):
                 LOGGER.debug("detected puzzle")
                 return CaptchaType.PUZZLE
-            elif await self.any_selector_in_list_present(ARCED_SLIDE_SELECTORS):
+            elif await self.any_selector_in_list_present(ARCED_SLIDE_UNIQUE_IDENTIFIERS):
                 LOGGER.debug("detected arced slide")
                 return CaptchaType.ARCED_SLIDE
             else:

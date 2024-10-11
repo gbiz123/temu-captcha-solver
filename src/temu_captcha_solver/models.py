@@ -1,10 +1,16 @@
 from pydantic import BaseModel
 
-class ArcedSlideCaptchaResponse(BaseModel):
+class PuzzleCaptchaResponse(BaseModel):
     """This object contains data about the location
     of the slider button within its slide. The proportion x
     is the location of the slide button divided by the 
     length of the slide bar"""
+    slide_x_proportion: float
+
+class ArcedSlideCaptchaResponse(BaseModel):
+    """This object contains data about the location
+    of the slider button within its slide. The answer is 
+    the number of pixels from slider origin"""
     pixels_from_slider_origin: int
 
 class ProportionalPoint(BaseModel):

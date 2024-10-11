@@ -1,5 +1,7 @@
 import re
 
+from playwright.async_api import FloatRect
+
 from temu_captcha_solver.models import ArcedSlideTrajectoryElement, ProportionalPoint
 
 def rotate_angle_from_style(style: str) -> float:
@@ -24,6 +26,12 @@ def xy_to_proportional_point(
         proportion_x = x_in_container / container_width,
         proportion_y = y_in_container / container_height,
     )
+
+def get_box_center(box: FloatRect) -> tuple[float, float]:
+    """Get the center of a box from a FloatRect"""
+    center_x = box["x"] + (box["width"] / 2)
+    center_y = box["y"] + (box["height"] / 2)
+    return center_x, center_y
 
 
 def get_center(left_x: float, top_y: float, width: float, height: float) -> tuple[float, float]:

@@ -3,9 +3,12 @@ ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR = "#slider > img"
 ARCED_SLIDE_PIECE_CONTAINER_SELECTOR = "#img-button"
 ARCED_SLIDE_PIECE_IMAGE_SELECTOR = "#img-button > img"
 ARCED_SLIDE_BUTTON_SELECTOR = "#slide-button"
+ARCED_SLIDE_UNIQUE_IDENTIFIERS = [".handleBar-vT4I5"]
 
-ARCED_SLIDE_SELECTORS = ["#img-button"]
-PUZZLE_SELECTORS: list[str] = []
+PUZZLE_BUTTON_SELECTOR = "#slide-button"
+PUZZLE_PUZZLE_IMAGE_SELECTOR = ".slider-img-bg-1konc"
+PUZZLE_PIECE_IMAGE_SELECTOR = "#img-button > img"
+PUZZLE_BAR_SELECTOR = ".handlebar-xHMxu"
+PUZZLE_UNIQUE_IDENTIFIERS = ["#Slider"]
+
 CAPTCHA_WRAPPERS = ["#verification"]
-
-

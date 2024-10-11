@@ -11,7 +11,7 @@ from ..asyncplaywrightsolver import AsyncPlaywrightSolver
 proxy = {
     "server": "pr.oxylabs.io:7777",
     "username": "customer-toughdata-cc-br",
-    "password": "toughproxies"
+    "password": "Toughproxies_123"
 }
 
 @pytest.mark.asyncio

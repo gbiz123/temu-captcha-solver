@@ -1,7 +1,7 @@
 import requests
 import logging
 
-from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse
+from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, PuzzleCaptchaResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ class ApiClient:
         self._PUZZLE_URL = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=" + api_key
         self._ARCED_SLIDE_URL = "https://www.sadcaptcha.com/api/v1/temu-arced-slide?licenseKey=" + api_key
 
-    def puzzle(self, puzzle_b64: str, piece_b64: str) -> ArcedSlideCaptchaResponse:
+    def puzzle(self, puzzle_b64: str, piece_b64: str) -> PuzzleCaptchaResponse:
         """Slide the puzzle piece"""
         data = {
             "puzzleImageB64": puzzle_b64,
@@ -20,7 +20,7 @@ class ApiClient:
         resp = requests.post(self._PUZZLE_URL, json=data)
         result = resp.json()
         LOGGER.debug("Got API response: " + str(result))
-        return ArcedSlideCaptchaResponse(pixels_from_slider_origin=result.get("slideXProportion"))
+        return PuzzleCaptchaResponse(slide_x_proportion=result.get("slideXProportion"))
 
     def arced_slide(self, request: ArcedSlideCaptchaRequest) -> ArcedSlideCaptchaResponse:
         """This is the Temu captcha where it's a puzzle slide, 

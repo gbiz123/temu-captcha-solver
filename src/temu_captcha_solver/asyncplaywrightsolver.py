@@ -1,6 +1,7 @@
 """This class handles the captcha solving for playwright users"""
 
 import logging
+import math
 import random
 from typing import Any, override
 from playwright.async_api import FloatRect, Locator, Page, expect
@@ -14,9 +15,14 @@ from .selectors import (
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
     CAPTCHA_WRAPPERS,
+    PUZZLE_BAR_SELECTOR,
+    PUZZLE_BUTTON_SELECTOR,
+    PUZZLE_PIECE_IMAGE_SELECTOR,
+    PUZZLE_PUZZLE_IMAGE_SELECTOR,
 ) 
 
 from .geometry import (
+    get_box_center,
     get_center,
     piece_is_not_moving,
     rotate_angle_from_style,
@@ -75,7 +81,27 @@ class AsyncPlaywrightSolver(AsyncSolver):
     async def solve_puzzle(self, retries: int = 3) -> None:
         """Temu puzzle is special because the pieces shift when pressing the slider button.
         Therefore we must send the pictures after pressing the button. """
-        raise NotImplementedError()
+        button_bbox = await self._get_element_bounding_box(PUZZLE_BUTTON_SELECTOR)
+        start_x, start_y = get_box_center(button_bbox)
+        await self.page.mouse.move(start_x, start_y)
+        await self.page.mouse.down()
+        start_distance = 10
+        for pixel in range(start_distance):
+            await self.page.mouse.move(start_x + start_distance, start_y + math.log(1 + pixel))
+            await asyncio.sleep(0.05)
+        LOGGER.debug("dragged 10 pixels")
+        puzzle_image = await self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+        piece_image = await self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
+        resp = self.client.puzzle(puzzle_image, piece_image)
+        slide_bar_width = await self._get_element_width(PUZZLE_BAR_SELECTOR)
+        pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
+        LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
+        for pixel in range(start_distance, pixel_distance):
+            await self.page.mouse.move(start_x + pixel, start_y + math.log(1 + pixel))
+            await asyncio.sleep(0.05)
+        await self.page.mouse.up()
+        LOGGER.debug("done")
+
 
     @override
     async def solve_arced_slide(self) -> None:
