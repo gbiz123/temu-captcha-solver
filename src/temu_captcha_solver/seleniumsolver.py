@@ -80,13 +80,15 @@ class SeleniumSolver(SyncSolver):
         return False
 
     def solve_puzzle(self) -> None:
+        """Slide 10 pixels, then grab the puzzle and piece, then make API call and consume the response"""
         slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR)
-        actions = ActionChains(self.chromedriver)
+        actions = ActionChains(self.chromedriver, duration=100)
         _ = actions.move_to_element(slide_button) \
                 .click_and_hold()
         start_distance = 10
         for pixel in range(start_distance):
-            _ = actions.move_by_offset(1, 1)
+            _ = actions.move_by_offset(1, int(random.gauss(1, 5))) \
+                    .pause(max(0, random.gauss(0.01, 0.005)))
         actions.perform()
         LOGGER.debug("dragged 10 pixels")
         puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
@@ -95,8 +97,10 @@ class SeleniumSolver(SyncSolver):
         slide_bar_width = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BAR_SELECTOR))["width"]
         pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
         LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
+        actions = ActionChains(self.chromedriver, duration=5)
         for pixel in range(start_distance, pixel_distance):
-            _ = actions.move_by_offset(1, 1)
+            _ = actions.move_by_offset(1, int(random.gauss(1, 5))) \
+                    .pause(max(0, random.gauss(0.01, 0.005)))
         actions.release().perform()
         LOGGER.debug("done")
 
