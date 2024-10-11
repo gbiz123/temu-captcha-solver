@@ -63,7 +63,7 @@ class PlaywrightSolver(SyncSolver):
         self.headers = headers
         self.proxy = proxy
 
-    @override
+    
     def captcha_is_present(self, timeout: int = 15) -> bool:
         try:
             captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
@@ -72,7 +72,7 @@ class PlaywrightSolver(SyncSolver):
         except (TimeoutError, AssertionError):
             return False
 
-    @override
+    
     def captcha_is_not_present(self, timeout: int = 15) -> bool:
         try:
             captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
@@ -81,7 +81,7 @@ class PlaywrightSolver(SyncSolver):
         except (TimeoutError, AssertionError):
             return False
 
-    @override
+    
     def solve_puzzle(self, retries: int = 3) -> None:
         """Temu puzzle is special because the pieces shift when pressing the slider button.
         Therefore we must send the pictures after pressing the button. """
@@ -106,7 +106,7 @@ class PlaywrightSolver(SyncSolver):
         self.page.mouse.up()
         LOGGER.debug("done")
 
-    @override
+    
     def solve_arced_slide(self) -> None:
         """Solves the arced slide puzzle. This challenge is similar to the puzzle
         challenge, but the puzzle piece travels in an arc, hence then name arced slide.
@@ -131,7 +131,7 @@ class PlaywrightSolver(SyncSolver):
         self.page.mouse.up()
 
 
-    @override
+    
     def any_selector_in_list_present(self, selectors: list[str]) -> bool:
         for selector in selectors:
             for ele in self.page.locator(selector).all():
@@ -262,7 +262,7 @@ class PlaywrightSolver(SyncSolver):
         x, y = get_center(box["x"], box["y"], box["width"], box["height"])
         self.page.mouse.move(x + x_offset, y + y_offset)
 
-    @override
+    
     def get_b64_img_from_src(self, selector: str) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
         e = self.page.locator(selector)
