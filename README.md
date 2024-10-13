@@ -6,7 +6,7 @@ Instructions for integrating with Selenium, Playwright, and Async Playwright are
 The end goal of this tool is to solve every single Temu captcha. 
 Currently we are able to solve the following challenges:
 
-<div>
+<div style="display: flex;">
 <div align="center">
     <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="150px" alt="TikTok Captcha Solver">
     <br/>
