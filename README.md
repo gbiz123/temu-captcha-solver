@@ -6,16 +6,18 @@ Instructions for integrating with Selenium, Playwright, and Async Playwright are
 The end goal of this tool is to solve every single Temu captcha. 
 Currently we are able to solve the following challenges:
 
-<div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="150px" alt="TikTok Captcha Solver">
-    <br/>
-    1. Arced Slide 
-</div>
-
-<div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="150px" alt="TikTok Captcha Solver">
-    <br/>
-    2. Puzzle Slide
+<div>
+    <div align="center">
+        <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="150px" alt="TikTok Captcha Solver">
+        <br/>
+        1. Arced Slide 
+    </div>
+    
+    <div align="center">
+        <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="150px" alt="TikTok Captcha Solver">
+        <br/>
+        2. Puzzle Slide
+    </div>
 </div>
 
 ## Requirements
