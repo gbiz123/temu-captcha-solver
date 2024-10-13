@@ -4,11 +4,11 @@ The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
 The end goal of this tool is to solve every single Temu captcha. 
-Currently we are able to solve the following challenges:
+Currently we are able to solve the arced slide and the puzzle slide:
 
 <div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="150px" height="100px" alt="TikTok Captcha Solver">
-    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="150px" height="100px" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="200px" height="150px" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="200px" height="150px" alt="TikTok Captcha Solver">
 </div>
     
 ## Requirements
