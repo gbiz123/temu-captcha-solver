@@ -7,8 +7,8 @@ The end goal of this tool is to solve every single Temu captcha.
 Currently we are able to solve the following challenges:
 
 <div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="150px" alt="TikTok Captcha Solver">
-    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="150px" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="150px" height="100px" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="150px" height="100px" alt="TikTok Captcha Solver">
 </div>
     
 ## Requirements
