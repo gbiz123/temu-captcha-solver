@@ -10,6 +10,9 @@ Currently we are able to solve the arced slide and the puzzle slide:
     <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="200px" height="150px" alt="TikTok Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="200px" height="150px" alt="TikTok Captcha Solver">
 </div>
+
+The Arced Slide challenge is the one where there is a puzzle piece that travels in an unpredictable trajectory, and there are two possible locations where the solution may be.
+The puzzle slide is unique in that the pieces relocate after you drag the slider.
     
 ## Requirements
 - Python >= 3.10
