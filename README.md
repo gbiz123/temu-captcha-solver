@@ -7,13 +7,13 @@ The end goal of this tool is to solve every single Temu captcha.
 Currently we are able to solve the following challenges:
 
 <div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="350" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" max-width="350px" alt="TikTok Captcha Solver">
     <br/>
     1. Arced Slide 
 </div>
 
 <div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="350" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" max-idth="350px" alt="TikTok Captcha Solver">
     <br/>
     2. Puzzle Slide
 </div>
