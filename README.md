@@ -9,7 +9,13 @@ Currently we are able to solve the following challenges:
 <div align="center">
     <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="350" alt="TikTok Captcha Solver">
     <br/>
-    1. Arced Slide Challenge
+    1. Arced Slide 
+</div>
+
+<div align="center">
+    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="350" alt="TikTok Captcha Solver">
+    <br/>
+    2. Puzzle Slide
 </div>
 
 ## Requirements
