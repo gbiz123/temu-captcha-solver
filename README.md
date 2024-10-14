@@ -4,14 +4,16 @@ The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
 The end goal of this tool is to solve every single Temu captcha. 
-Currently we are able to solve the following challenges:
+Currently we are able to solve the arced slide and the puzzle slide:
 
 <div align="center">
-    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="350" alt="TikTok Captcha Solver">
-    <br/>
-    1. Arced Slide Challenge
+    <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="200px" height="150px" alt="TikTok Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="200px" height="150px" alt="TikTok Captcha Solver">
 </div>
 
+The Arced Slide challenge is the one where there is a puzzle piece that travels in an unpredictable trajectory, and there are two possible locations where the solution may be.
+The puzzle slide is unique in that the pieces relocate after you drag the slider.
+    
 ## Requirements
 - Python >= 3.10
 - **If using Selenium** - Selenium properly installed and in `PATH`
