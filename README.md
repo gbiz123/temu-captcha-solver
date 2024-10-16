@@ -1,5 +1,5 @@
 # Temu Captcha Solver API
-This project is the [SadCaptcha Temu Captcha Solver](https://www.sadcaptcha.com?ref=temughclientrepo) API client.
+This project is the [SadCaptcha Temu Captcha Solver](https://www.sadcaptcha.com/temu-captcha-solver?ref=temughclientrepo) API client.
 The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or Async Playwright app as simple as one line of code.
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
