@@ -23,12 +23,11 @@ from .geometry import(
 ) 
 
 from .selectors import (
-    ARCED_SLIDE_BAR_SELECTOR,
     ARCED_SLIDE_BUTTON_SELECTOR,
     ARCED_SLIDE_PIECE_CONTAINER_SELECTOR,
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
-    CAPTCHA_WRAPPERS,
+    CAPTCHA_PRESENCE_INDICATORS,
     PUZZLE_BAR_SELECTOR,
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
@@ -63,21 +62,23 @@ class SeleniumSolver(SyncSolver):
 
     def captcha_is_present(self, timeout: int = 15) -> bool:
         for _ in range(timeout * 2):
-            if self.any_selector_in_list_present(CAPTCHA_WRAPPERS):
-                print("Captcha detected")
+            if self.any_selector_in_list_present(CAPTCHA_PRESENCE_INDICATORS):
+                LOGGER.debug("Captcha detected")
                 return True
             time.sleep(0.5)
         LOGGER.debug("Captcha not found")
         return False
 
     def captcha_is_not_present(self, timeout: int = 15) -> bool:
+        captcha_not_present = True
         for _ in range(timeout * 2):
-            if len(self.chromedriver.find_elements(By.CSS_SELECTOR, CAPTCHA_WRAPPERS[0])) == 0:
-                print("Captcha not present")
-                return True
+            for selector in CAPTCHA_PRESENCE_INDICATORS:
+                if len(self.chromedriver.find_elements(By.CSS_SELECTOR, selector)) != 0:
+                    LOGGER.debug("Captcha not present")
+                    captcha_not_present = False
             time.sleep(0.5)
         LOGGER.debug("Captcha not found")
-        return False
+        return captcha_not_present
 
     def solve_puzzle(self) -> None:
         """Slide 10 pixels, then grab the puzzle and piece, then make API call and consume the response"""
@@ -185,10 +186,9 @@ class SeleniumSolver(SyncSolver):
         and computing the ArcedSlideTrajectoryElement at each location."""
         slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_BUTTON_SELECTOR)
         slider_piece = self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_PIECE_CONTAINER_SELECTOR)
-        slide_bar = self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_BAR_SELECTOR)
         puzzle = self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         
-        slide_bar_width = self._get_element_bounding_box(slide_bar)["width"]
+        slide_bar_width = self._get_arced_slide_bar_width()
         puzzle_img_bounding_box = self._get_element_bounding_box(puzzle)
 
         _ = actions.click_and_hold(slide_button)
@@ -217,6 +217,13 @@ class SeleniumSolver(SyncSolver):
         actions.perform()
         return trajectory
 
+    def _get_arced_slide_bar_width(self) -> float:
+        """Gets the width of the arced slide bar from the width of the image. 
+        The slide bar is always the same as the image. 
+        We do not get the width of the bar element itself, because the css selector varies from region to region."""
+        bg_image_bounding_box = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR))
+        slide_bar_width = bg_image_bounding_box["width"]
+        return slide_bar_width
 
     def _get_arced_slide_trajectory_element(
             self,

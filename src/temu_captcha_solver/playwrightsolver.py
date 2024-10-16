@@ -8,22 +8,18 @@ from playwright.sync_api import FloatRect, Locator, Page, expect
 from playwright.sync_api import TimeoutError
 import time
 
-from .captchatype import CaptchaType
 from .syncsolver import SyncSolver
 
 from .selectors import (
-    ARCED_SLIDE_BAR_SELECTOR,
     ARCED_SLIDE_BUTTON_SELECTOR,
     ARCED_SLIDE_PIECE_CONTAINER_SELECTOR,
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
-    ARCED_SLIDE_UNIQUE_IDENTIFIERS,
-    CAPTCHA_WRAPPERS,
+    CAPTCHA_PRESENCE_INDICATORS,
     PUZZLE_BAR_SELECTOR,
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
-    PUZZLE_UNIQUE_IDENTIFIERS
 ) 
 
 from .geometry import (
@@ -66,7 +62,9 @@ class PlaywrightSolver(SyncSolver):
     
     def captcha_is_present(self, timeout: int = 15) -> bool:
         try:
-            captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
+            captcha_locator = self.page.locator(CAPTCHA_PRESENCE_INDICATORS[0])
+            for selector in CAPTCHA_PRESENCE_INDICATORS:
+                captcha_locator = captcha_locator.or_(self.page.locator(selector))
             expect(captcha_locator.first).to_have_count(1, timeout=timeout * 1000)
             return True
         except (TimeoutError, AssertionError):
@@ -75,7 +73,9 @@ class PlaywrightSolver(SyncSolver):
     
     def captcha_is_not_present(self, timeout: int = 15) -> bool:
         try:
-            captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
+            captcha_locator = self.page.locator(CAPTCHA_PRESENCE_INDICATORS[0])
+            for selector in CAPTCHA_PRESENCE_INDICATORS:
+                captcha_locator = captcha_locator.or_(self.page.locator(selector))
             expect(captcha_locator.first).to_have_count(0, timeout=timeout * 1000)
             return True
         except (TimeoutError, AssertionError):
@@ -158,8 +158,7 @@ class PlaywrightSolver(SyncSolver):
         """Sweep the button across the bar to determine the trajectory of the slide piece.
         Clicks and drags box, but does not release. Must pass the coordinates of the slide button."""
         slider_piece_locator = self.page.locator(ARCED_SLIDE_PIECE_CONTAINER_SELECTOR)
-        slide_bar_bounding_box = self._get_element_bounding_box(ARCED_SLIDE_BAR_SELECTOR)
-        slide_bar_width = slide_bar_bounding_box["width"]
+        slide_bar_width = self._get_arced_slide_bar_width()
         puzzle_img_bounding_box = self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         trajectory: list[ArcedSlideTrajectoryElement] = []
 
@@ -181,6 +180,14 @@ class PlaywrightSolver(SyncSolver):
             if times_piece_did_not_move >= 10:
                 break
         return trajectory
+
+    def _get_arced_slide_bar_width(self) -> float:
+        """Gets the width of the arced slide bar from the width of the image. 
+        The slide bar is always the same as the image. 
+        We do not get the width of the bar element itself, because the css selector varies from region to region."""
+        bg_image_bounding_box = self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
+        slide_bar_width = bg_image_bounding_box["width"]
+        return slide_bar_width
 
     def _click_proportional(
             self,

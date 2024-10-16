@@ -9,12 +9,11 @@ from playwright.async_api import TimeoutError
 import asyncio
 
 from .selectors import (
-    ARCED_SLIDE_BAR_SELECTOR,
     ARCED_SLIDE_BUTTON_SELECTOR,
     ARCED_SLIDE_PIECE_CONTAINER_SELECTOR,
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
-    CAPTCHA_WRAPPERS,
+    CAPTCHA_PRESENCE_INDICATORS,
     PUZZLE_BAR_SELECTOR,
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
@@ -62,7 +61,9 @@ class AsyncPlaywrightSolver(AsyncSolver):
     
     async def captcha_is_present(self, timeout: int = 15) -> bool:
         try:
-            captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
+            captcha_locator = self.page.locator(CAPTCHA_PRESENCE_INDICATORS[0])
+            for selector in CAPTCHA_PRESENCE_INDICATORS:
+                captcha_locator = captcha_locator.or_(self.page.locator(selector))
             await expect(captcha_locator.first).to_have_count(1, timeout=timeout * 1000)
             return True
         except (TimeoutError, AssertionError):
@@ -71,7 +72,9 @@ class AsyncPlaywrightSolver(AsyncSolver):
     
     async def captcha_is_not_present(self, timeout: int = 15) -> bool:
         try:
-            captcha_locator = self.page.locator(CAPTCHA_WRAPPERS[0])
+            captcha_locator = self.page.locator(CAPTCHA_PRESENCE_INDICATORS[0])
+            for selector in CAPTCHA_PRESENCE_INDICATORS:
+                captcha_locator = captcha_locator.or_(self.page.locator(selector))
             await expect(captcha_locator.first).to_have_count(0, timeout=timeout * 1000)
             return True
         except (TimeoutError, AssertionError):
@@ -102,7 +105,6 @@ class AsyncPlaywrightSolver(AsyncSolver):
         await self.page.mouse.up()
         LOGGER.debug("done")
 
-
     
     async def solve_arced_slide(self) -> None:
         """Solves the arced slide puzzle. This challenge is similar to the puzzle
@@ -126,7 +128,6 @@ class AsyncPlaywrightSolver(AsyncSolver):
         solution = self.client.arced_slide(request)
         await self._drag_mouse_horizontal_with_overshoot(solution.pixels_from_slider_origin, start_x, start_y)
         await self.page.mouse.up()
-
 
     
     async def any_selector_in_list_present(self, selectors: list[str]) -> bool:
@@ -155,8 +156,7 @@ class AsyncPlaywrightSolver(AsyncSolver):
         """Sweep the button across the bar to determine the trajectory of the slide piece.
         Clicks and drags box, but does not release. Must pass the coordinates of the slide button."""
         slider_piece_locator = self.page.locator(ARCED_SLIDE_PIECE_CONTAINER_SELECTOR)
-        slide_bar_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_BAR_SELECTOR)
-        slide_bar_width = slide_bar_bounding_box["width"]
+        slide_bar_width = await self._get_arced_slide_bar_width()
         puzzle_img_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         trajectory: list[ArcedSlideTrajectoryElement] = []
 
@@ -178,6 +178,14 @@ class AsyncPlaywrightSolver(AsyncSolver):
             if times_piece_did_not_move >= 10:
                 break
         return trajectory
+
+    async def _get_arced_slide_bar_width(self) -> float:
+        """Gets the width of the arced slide bar from the width of the image. 
+        The slide bar is always the same as the image. 
+        We do not get the width of the bar element itself, because the css selector varies from region to region."""
+        bg_image_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
+        slide_bar_width = bg_image_bounding_box["width"]
+        return slide_bar_width
 
     async def _click_proportional(
             self,

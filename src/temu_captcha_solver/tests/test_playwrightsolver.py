@@ -13,8 +13,8 @@ def test_does_not_false_positive(caplog):
 
 proxy = {
     "server": "pr.oxylabs.io:7777",
-    "username": "customer-toughdata-cc-us",
-    "password": "toughproxies"
+    "username": "customer-toughdata-cc-br",
+    "password": "Toughproxies_123"
 }
 
 def test_solve_captcha_on_temu_open(caplog):
