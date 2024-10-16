@@ -3,7 +3,7 @@
 import logging
 import math
 import random
-from typing import Any, override
+from typing import Any
 from playwright.sync_api import FloatRect, Locator, Page, expect
 from playwright.sync_api import TimeoutError
 import time
@@ -16,7 +16,6 @@ from .selectors import (
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
     CAPTCHA_PRESENCE_INDICATORS,
-    PUZZLE_BAR_SELECTOR,
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
@@ -97,12 +96,13 @@ class PlaywrightSolver(SyncSolver):
         puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
         piece_image = self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
         resp = self.client.puzzle(puzzle_image, piece_image)
-        slide_bar_width = self._get_element_width(PUZZLE_BAR_SELECTOR)
+        slide_bar_width = self._get_puzzle_slide_bar_width()
         pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
         LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
         for pixel in range(start_distance, pixel_distance):
             self.page.mouse.move(start_x + pixel, start_y + math.log(1 + pixel))
-            time.sleep(0.05)
+            time.sleep(0.01)
+        time.sleep(0.5)
         self.page.mouse.up()
         LOGGER.debug("done")
 
@@ -129,7 +129,6 @@ class PlaywrightSolver(SyncSolver):
         solution = self.client.arced_slide(request)
         self._drag_mouse_horizontal_with_overshoot(solution.pixels_from_slider_origin, start_x, start_y)
         self.page.mouse.up()
-
 
     
     def any_selector_in_list_present(self, selectors: list[str]) -> bool:
@@ -180,6 +179,14 @@ class PlaywrightSolver(SyncSolver):
             if times_piece_did_not_move >= 10:
                 break
         return trajectory
+
+    def _get_puzzle_slide_bar_width(self) -> float:
+        """Gets the width of the puzzle slide bar from the width of the image. 
+        The slide bar is always the same as the image. 
+        We do not get the width of the bar element itself, because the css selector varies from region to region."""
+        bg_image_bounding_box = self._get_element_bounding_box(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+        slide_bar_width = bg_image_bounding_box["width"]
+        return slide_bar_width
 
     def _get_arced_slide_bar_width(self) -> float:
         """Gets the width of the arced slide bar from the width of the image. 

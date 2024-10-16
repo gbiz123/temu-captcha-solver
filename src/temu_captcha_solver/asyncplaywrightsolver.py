@@ -3,7 +3,7 @@
 import logging
 import math
 import random
-from typing import Any, override
+from typing import Any
 from playwright.async_api import FloatRect, Locator, Page, expect
 from playwright.async_api import TimeoutError
 import asyncio
@@ -14,7 +14,6 @@ from .selectors import (
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
     CAPTCHA_PRESENCE_INDICATORS,
-    PUZZLE_BAR_SELECTOR,
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
@@ -96,12 +95,12 @@ class AsyncPlaywrightSolver(AsyncSolver):
         puzzle_image = await self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
         piece_image = await self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
         resp = self.client.puzzle(puzzle_image, piece_image)
-        slide_bar_width = await self._get_element_width(PUZZLE_BAR_SELECTOR)
+        slide_bar_width = await self._get_puzzle_slide_bar_width()
         pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
         LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
         for pixel in range(start_distance, pixel_distance):
             await self.page.mouse.move(start_x + pixel, start_y + math.log(1 + pixel))
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.02)
         await self.page.mouse.up()
         LOGGER.debug("done")
 
@@ -178,6 +177,14 @@ class AsyncPlaywrightSolver(AsyncSolver):
             if times_piece_did_not_move >= 10:
                 break
         return trajectory
+
+    async def _get_puzzle_slide_bar_width(self) -> float:
+        """Gets the width of the puzzle slide bar from the width of the image. 
+        The slide bar is always the same as the image. 
+        We do not get the width of the bar element itself, because the css selector varies from region to region."""
+        bg_image_bounding_box = await self._get_element_bounding_box(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+        slide_bar_width = bg_image_bounding_box["width"]
+        return slide_bar_width
 
     async def _get_arced_slide_bar_width(self) -> float:
         """Gets the width of the arced slide bar from the width of the image. 

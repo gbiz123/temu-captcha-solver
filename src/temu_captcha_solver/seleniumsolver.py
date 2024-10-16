@@ -4,15 +4,13 @@ import logging
 import math
 import random
 import time
-from typing import Any, Literal, override
+from typing import Any
 from playwright.sync_api import FloatRect
 
 from selenium.webdriver import ActionChains, Chrome
 from selenium.webdriver.common.actions.action_builder import ActionBuilder
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-
-from .captchatype import CaptchaType
 
 from .geometry import(
     get_box_center,
@@ -28,7 +26,6 @@ from .selectors import (
     ARCED_SLIDE_PIECE_IMAGE_SELECTOR,
     ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
     CAPTCHA_PRESENCE_INDICATORS,
-    PUZZLE_BAR_SELECTOR,
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
@@ -36,7 +33,6 @@ from .selectors import (
  
 from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement
 from .api import ApiClient
-from .downloader import download_image_b64
 from .syncsolver import SyncSolver
 
 LOGGER = logging.getLogger(__name__)
@@ -83,26 +79,32 @@ class SeleniumSolver(SyncSolver):
     def solve_puzzle(self) -> None:
         """Slide 10 pixels, then grab the puzzle and piece, then make API call and consume the response"""
         slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR)
-        actions = ActionChains(self.chromedriver, duration=100)
-        _ = actions.move_to_element(slide_button) \
-                .click_and_hold()
+        slide_button_box = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR))
+        start_x, start_y = get_box_center(slide_button_box)
+        actions = ActionBuilder(self.chromedriver, duration=5)
+        _ = actions.pointer_action \
+                .move_to_location(start_x, start_y) \
+                .pointer_down()
         start_distance = 10
         for pixel in range(start_distance):
-            _ = actions.move_by_offset(1, int(random.gauss(0, 5))) \
-                    .pause(max(0, random.gauss(0.01, 0.005)))
+            _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
+                    .pause(0.02)
+            
         actions.perform()
         LOGGER.debug("dragged 10 pixels")
         puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
         piece_image = self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
         resp = self.client.puzzle(puzzle_image, piece_image)
-        slide_bar_width = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BAR_SELECTOR))["width"]
+        slide_bar_width = self._get_puzzle_slide_bar_width()
         pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
         LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
-        actions = ActionChains(self.chromedriver, duration=5)
+        actions = ActionBuilder(self.chromedriver, duration=5)
         for pixel in range(start_distance, pixel_distance):
-            _ = actions.move_by_offset(1, int(random.gauss(0, 5))) \
-                    .pause(max(0, random.gauss(0.01, 0.005)))
-        actions.release().perform()
+            _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
+                    .pause(0.01)
+        actions.pointer_action.pause(0.5)
+        _ = actions.pointer_action.pointer_up()
+        actions.perform()
         LOGGER.debug("done")
 
     def solve_arced_slide(self) -> None:
@@ -216,6 +218,14 @@ class SeleniumSolver(SyncSolver):
                 break
         actions.perform()
         return trajectory
+
+    def _get_puzzle_slide_bar_width(self) -> float:
+        """Gets the width of the puzzle slide bar from the width of the image. 
+        The slide bar is always the same as the image. 
+        We do not get the width of the bar element itself, because the css selector varies from region to region."""
+        bg_image_bounding_box = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_PUZZLE_IMAGE_SELECTOR))
+        slide_bar_width = bg_image_bounding_box["width"]
+        return slide_bar_width
 
     def _get_arced_slide_bar_width(self) -> float:
         """Gets the width of the arced slide bar from the width of the image. 
