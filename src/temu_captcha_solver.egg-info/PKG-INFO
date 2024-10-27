@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: temu-captcha-solver
-Version: 0.0.7
+Version: 0.0.8
 Summary: This package integrates with Selenium or Playwright to solve any Temu captcha in one line of code.
 Author-email: Toughdata LLC <greg@toughdata.net>
 Project-URL: Homepage, https://www.sadcaptcha.com
@@ -26,7 +26,7 @@ Requires-Dist: undetected_chromedriver
 Requires-Dist: setuptools
 
 # Temu Captcha Solver API
-This project is the [SadCaptcha Temu Captcha Solver](https://www.sadcaptcha.com?ref=temughclientrepo) API client.
+This project is the [SadCaptcha Temu Captcha Solver](https://www.sadcaptcha.com/temu-captcha-solver?ref=temughclientrepo) API client.
 The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or Async Playwright app as simple as one line of code.
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 

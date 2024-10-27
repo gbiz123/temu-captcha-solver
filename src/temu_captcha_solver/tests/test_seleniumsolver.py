@@ -23,7 +23,7 @@ def test_solve_captcha_at_temu_open(caplog):
     try:
         driver.get("https://www.temu.com")
         input()
-        sadcaptcha = SeleniumSolver(driver, os.environ["API_KEY"])
+        sadcaptcha = SeleniumSolver(driver, os.environ["API_KEY"], dump_requests=True)
         sadcaptcha.solve_captcha_if_present()
         assert sadcaptcha.captcha_is_not_present()
     finally:

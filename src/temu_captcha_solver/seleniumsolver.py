@@ -1,5 +1,6 @@
 """This class handles the captcha solving for selenium users"""
 
+import json
 import logging
 import math
 import random
@@ -9,6 +10,8 @@ from playwright.sync_api import FloatRect
 
 from selenium.webdriver import ActionChains, Chrome
 from selenium.webdriver.common.actions.action_builder import ActionBuilder
+from selenium.webdriver.common.actions.interaction import POINTER_MOUSE
+from selenium.webdriver.common.actions.pointer_input import PointerInput
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
@@ -31,7 +34,7 @@ from .selectors import (
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
 ) 
  
-from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement
+from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, dump_to_json
 from .api import ApiClient
 from .syncsolver import SyncSolver
 
@@ -49,12 +52,14 @@ class SeleniumSolver(SyncSolver):
             chromedriver: Chrome,
             sadcaptcha_api_key: str,
             headers: dict[str, Any] | None = None,
-            proxy: str | None = None
+            proxy: str | None = None,
+            dump_requests: bool = False
         ) -> None:
         self.chromedriver = chromedriver
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers
         self.proxy = proxy
+        super().__init__(dump_requests)
 
     def captcha_is_present(self, timeout: int = 15) -> bool:
         for _ in range(timeout * 2):
@@ -81,7 +86,8 @@ class SeleniumSolver(SyncSolver):
         slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR)
         slide_button_box = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR))
         start_x, start_y = get_box_center(slide_button_box)
-        actions = ActionBuilder(self.chromedriver, duration=5)
+        input = PointerInput(POINTER_MOUSE, "default mouse")
+        actions = ActionBuilder(self.chromedriver, duration=5, mouse=input)
         _ = actions.pointer_action \
                 .move_to_location(start_x, start_y) \
                 .pointer_down()
@@ -89,7 +95,6 @@ class SeleniumSolver(SyncSolver):
         for pixel in range(start_distance):
             _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
                     .pause(0.02)
-            
         actions.perform()
         LOGGER.debug("dragged 10 pixels")
         puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
@@ -98,7 +103,7 @@ class SeleniumSolver(SyncSolver):
         slide_bar_width = self._get_puzzle_slide_bar_width()
         pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
         LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
-        actions = ActionBuilder(self.chromedriver, duration=5)
+        actions = ActionBuilder(self.chromedriver, duration=1, mouse=input)
         for pixel in range(start_distance, pixel_distance):
             _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
                     .pause(0.01)
@@ -177,11 +182,14 @@ class SeleniumSolver(SyncSolver):
         puzzle = self.get_b64_img_from_src(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         piece = self.get_b64_img_from_src(ARCED_SLIDE_PIECE_IMAGE_SELECTOR)
         trajectory = self._get_slide_piece_trajectory(actions)
-        return ArcedSlideCaptchaRequest(
+        request = ArcedSlideCaptchaRequest(
             puzzle_image_b64=puzzle,
             piece_image_b64=piece,
             slide_piece_trajectory=trajectory
         )
+        if self.dump_requests:
+            dump_to_json(request, "arced_slide_request.json")
+        return request
 
     def _get_slide_piece_trajectory(self, actions: ActionChains) -> list[ArcedSlideTrajectoryElement]:
         """Determines slider trajectory by dragging the slider element across the entire box,

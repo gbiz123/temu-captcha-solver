@@ -11,6 +11,9 @@ LOGGER = logging.getLogger(__name__)
 
 class SyncSolver(ABC):
 
+    def __init__(self, dump_requests: bool = False):
+        self.dump_requests = dump_requests
+
     def solve_captcha_if_present(self, captcha_detect_timeout: int = 15, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
 
@@ -68,3 +71,4 @@ class SyncSolver(ABC):
     @abstractmethod
     def any_selector_in_list_present(self, selectors: list[str]) -> bool:
         pass
+

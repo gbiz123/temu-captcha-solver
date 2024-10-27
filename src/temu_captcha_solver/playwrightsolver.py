@@ -1,5 +1,6 @@
 """This class handles the captcha solving for playwright users"""
 
+import json
 import logging
 import math
 import random
@@ -31,13 +32,16 @@ from .geometry import (
 
 from .models import (
     ArcedSlideCaptchaRequest,
-    ArcedSlideTrajectoryElement
+    ArcedSlideTrajectoryElement,
+    dump_to_json
 ) 
 
 from .api import ApiClient
 
 
 LOGGER = logging.getLogger(__name__)
+
+logging.basicConfig(level=logging.DEBUG)
 
 class PlaywrightSolver(SyncSolver):
 
@@ -51,12 +55,14 @@ class PlaywrightSolver(SyncSolver):
             page: Page,
             sadcaptcha_api_key: str,
             headers: dict[str, Any] | None = None, 
-            proxy: str | None = None
+            proxy: str | None = None,
+            dump_requests: bool = False
         ) -> None:
         self.page = page
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers
         self.proxy = proxy
+        super().__init__(dump_requests)
 
     
     def captcha_is_present(self, timeout: int = 15) -> bool:
@@ -91,7 +97,7 @@ class PlaywrightSolver(SyncSolver):
         start_distance = 10
         for pixel in range(start_distance):
             self.page.mouse.move(start_x + start_distance, start_y + math.log(1 + pixel))
-            time.sleep(0.05)
+            time.sleep(0.02)
         LOGGER.debug("dragged 10 pixels")
         puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
         piece_image = self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
@@ -146,11 +152,14 @@ class PlaywrightSolver(SyncSolver):
         puzzle = self.get_b64_img_from_src(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         piece = self.get_b64_img_from_src(ARCED_SLIDE_PIECE_IMAGE_SELECTOR)
         trajectory = self._get_slide_piece_trajectory(slide_button_center_x, slide_button_center_y)
-        return ArcedSlideCaptchaRequest(
+        request = ArcedSlideCaptchaRequest(
             puzzle_image_b64=puzzle,
             piece_image_b64=piece,
             slide_piece_trajectory=trajectory
         )
+        if self.dump_requests:
+            dump_to_json(request, "arced_slide_request.json")
+        return request
 
 
     def _get_slide_piece_trajectory(self, slide_button_center_x: float, slide_button_center_y: float) -> list[ArcedSlideTrajectoryElement]:

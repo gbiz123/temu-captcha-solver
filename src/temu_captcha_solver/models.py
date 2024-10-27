@@ -1,4 +1,11 @@
+import json
+from typing import Type
 from pydantic import BaseModel
+
+def dump_to_json(obj: BaseModel, filename: str) -> None:
+    """Dump a pydantic obj to json file"""
+    with open(filename, "w") as f:
+        json.dump(obj.model_dump(), f)
 
 class PuzzleCaptchaResponse(BaseModel):
     """This object contains data about the location
