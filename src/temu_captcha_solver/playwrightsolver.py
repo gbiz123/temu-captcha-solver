@@ -75,9 +75,6 @@ class PlaywrightSolver(SyncSolver):
             captcha_locator = self.page.locator(CAPTCHA_PRESENCE_INDICATORS[0])
             for selector in CAPTCHA_PRESENCE_INDICATORS:
                 captcha_locator = captcha_locator.or_(self.page.locator(selector))
-
-            semantic_shapes_locator = self.page.locator(SEMANTIC_SHAPES_IFRAME)
-            captcha_locator = captcha_locator.or_(semantic_shapes_locator)
             
             expect(captcha_locator.first).to_have_count(1, timeout=timeout * 1000)
             LOGGER.debug("captcha is present")
@@ -159,19 +156,19 @@ class PlaywrightSolver(SyncSolver):
                     LOGGER.debug(f"solving shapes in in {-1 * i}")
                     time.sleep(1)
 
-                image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_locator=SEMANTIC_SHAPES_IFRAME)
-                challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_locator=SEMANTIC_SHAPES_IFRAME)
+                image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
                 request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
                 
                 if self.dump_requests:
                     dump_to_json(request, "semantic_shapes_request.json")
                 
                 resp = self.client.semantic_shapes(request)
-                challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_locator=SEMANTIC_SHAPES_IFRAME)
+                challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
                 
                 if challenge != challenge_current:
                     LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
-                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_locator=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
                     continue
 
                 self._click_proportional(SEMANTIC_SHAPES_IMAGE, resp.proportion_x, resp.proportion_y, iframe_selector=SEMANTIC_SHAPES_IFRAME)                
@@ -183,7 +180,7 @@ class PlaywrightSolver(SyncSolver):
 
                 if self.captcha_is_present(1):
                     LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
-                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_locator=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
                     continue
                 
                 LOGGER.debug("solved semantic shapes")
@@ -191,13 +188,13 @@ class PlaywrightSolver(SyncSolver):
 
             except BadRequest as e:
                 LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
-                self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_locator=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
                 time.sleep(3)
 
     
-    def any_selector_in_list_present(self, selectors: list[str], iframe_locator: str | None = None) -> bool:
+    def any_selector_in_list_present(self, selectors: list[str], iframe_selector: str | None = None) -> bool:
         for selector in selectors:
-            e = self._get_locator(selector, iframe_locator=iframe_locator)
+            e = self._get_locator(selector, iframe_selector=iframe_selector)
             for ele in e.all():
                 if ele.is_visible():
                     LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
@@ -279,10 +276,10 @@ class PlaywrightSolver(SyncSolver):
             proportion_x: float from 0 to 1 defining the proportion x location to click 
             proportion_y: float from 0 to 1 defining the proportion y location to click 
         """
-        bounding_box = self._get_element_bounding_box(selector, iframe_locator=iframe_selector)
+        bounding_box = self._get_element_bounding_box(selector, iframe_selector=iframe_selector)
         x_offset = (proportion_x * bounding_box["width"])
         y_offset = (proportion_y * bounding_box["height"]) 
-        self._get_locator(selector, iframe_locator=iframe_selector).click(position={"x": x_offset, "y": y_offset}, force=True)
+        self._get_locator(selector, iframe_selector=iframe_selector).click(position={"x": x_offset, "y": y_offset}, force=True)
         LOGGER.debug(f"clicked {selector} at offset {x_offset}, {y_offset}")
 
     def _drag_mouse_horizontal_with_overshoot(self, x_distance: int, start_x_coord: float, start_y_coord: float) -> None:
@@ -327,14 +324,14 @@ class PlaywrightSolver(SyncSolver):
             piece_center=piece_center
         )
 
-    def _get_locator(self, selector: str, iframe_locator: str | None = None) -> Locator:
-        if iframe_locator:
-            return self._get_locator_from_frame(selector, iframe_locator)
+    def _get_locator(self, selector: str, iframe_selector: str | None = None) -> Locator:
+        if iframe_selector:
+            return self._get_locator_from_frame(selector, iframe_selector)
         else:
             return self.page.locator(selector)
 
-    def _get_element_bounding_box(self, selector: str, iframe_locator: str | None = None) -> FloatRect:
-        e = self._get_locator(selector, iframe_locator=iframe_locator)
+    def _get_element_bounding_box(self, selector: str, iframe_selector: str | None = None) -> FloatRect:
+        e = self._get_locator(selector, iframe_selector=iframe_selector)
         box = e.bounding_box()
         if box is None:
             raise ValueError("Bounding box for slide bar was none")
@@ -348,9 +345,9 @@ class PlaywrightSolver(SyncSolver):
         self.page.mouse.move(x + x_offset, y + y_offset)
 
     
-    def get_b64_img_from_src(self, selector: str, iframe_locator: str | None = None) -> str:
+    def get_b64_img_from_src(self, selector: str, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
-        e = self._get_locator(selector, iframe_locator=iframe_locator)
+        e = self._get_locator(selector, iframe_selector=iframe_selector)
         url = e.get_attribute("src")
         if not url:
             raise ValueError("element " + selector + " had no url")
@@ -358,17 +355,17 @@ class PlaywrightSolver(SyncSolver):
         LOGGER.debug("got b64 image from data url")
         return data
 
-    def _get_element_text(self, selector: str, iframe_locator: str | None = None) -> str:
+    def _get_element_text(self, selector: str, iframe_selector: str | None = None) -> str:
         """Get the text of an element"""
-        e = self._get_locator(selector, iframe_locator=iframe_locator)
+        e = self._get_locator(selector, iframe_selector=iframe_selector)
         text_content = e.text_content()
         if not text_content:
             raise ValueError("element " + selector + " had no text content")
         LOGGER.debug(f"{selector} has text: {text_content}")
         return text_content
 
-    def _get_locator_from_frame(self, selector: str, iframe_locator: str = "frame") -> Locator:
-        return self.page.frame_locator(iframe_locator).locator(selector)
+    def _get_locator_from_frame(self, selector: str, iframe_selector: str = "frame") -> Locator:
+        return self.page.frame_locator(iframe_selector).locator(selector)
 
     def _compute_puzzle_slide_distance(self, proportion_x: float) -> int:
         e = self.page.locator("#captcha-verify-image")

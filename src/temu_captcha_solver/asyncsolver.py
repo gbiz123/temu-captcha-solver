@@ -6,11 +6,14 @@ from abc import ABC, abstractmethod
 
 
 from temu_captcha_solver.captchatype import CaptchaType
-from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS
+from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS
 
 LOGGER = logging.getLogger(__name__)
 
 class AsyncSolver(ABC):
+
+    def __init__(self, dump_requests: bool = False):
+        self.dump_requests = dump_requests
 
     async def solve_captcha_if_present(self, captcha_detect_timeout: int = 15, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
@@ -29,6 +32,8 @@ class AsyncSolver(ABC):
                         await self.solve_arced_slide()
                     case CaptchaType.PUZZLE: 
                         await self.solve_puzzle()
+                    case CaptchaType.SEMANTIC_SHAPES: 
+                        await self.solve_semantic_shapes()
             if await self.captcha_is_not_present(timeout=5):
                 return
             else:
@@ -42,6 +47,9 @@ class AsyncSolver(ABC):
             elif await self.any_selector_in_list_present(ARCED_SLIDE_UNIQUE_IDENTIFIERS):
                 LOGGER.debug("detected arced slide")
                 return CaptchaType.ARCED_SLIDE
+            elif await self.any_selector_in_list_present(SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS):
+                LOGGER.debug("detected semantic shapes")
+                return CaptchaType.SEMANTIC_SHAPES
             else:
                 await asyncio.sleep(1)
         raise ValueError("Neither puzzle, or arced slide was present")
@@ -60,6 +68,10 @@ class AsyncSolver(ABC):
 
     @abstractmethod
     async def solve_puzzle(self) -> None:
+        pass
+
+    @abstractmethod
+    async def solve_semantic_shapes(self) -> None:
         pass
 
     @abstractmethod

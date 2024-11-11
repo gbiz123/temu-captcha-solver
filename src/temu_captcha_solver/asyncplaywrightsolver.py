@@ -17,6 +17,10 @@ from .selectors import (
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
+    SEMANTIC_SHAPES_CHALLENGE_TEXT,
+    SEMANTIC_SHAPES_IFRAME,
+    SEMANTIC_SHAPES_IMAGE,
+    SEMANTIC_SHAPES_REFRESH_BUTTON,
 ) 
 
 from .geometry import (
@@ -29,11 +33,13 @@ from .geometry import (
 
 from .models import (
     ArcedSlideCaptchaRequest,
-    ArcedSlideTrajectoryElement
+    ArcedSlideTrajectoryElement,
+    SemanticShapesRequest,
+    dump_to_json
 ) 
 
 from .asyncsolver import AsyncSolver
-from .api import ApiClient
+from .api import ApiClient, BadRequest
 
 
 LOGGER = logging.getLogger(__name__)
@@ -50,12 +56,14 @@ class AsyncPlaywrightSolver(AsyncSolver):
             page: Page,
             sadcaptcha_api_key: str,
             headers: dict[str, Any] | None = None, 
-            proxy: str | None = None
+            proxy: str | None = None,
+            dump_requests: bool = False
         ) -> None:
         self.page = page
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers
         self.proxy = proxy
+        super().__init__(dump_requests)
 
     
     async def captcha_is_present(self, timeout: int = 15) -> bool:
@@ -127,6 +135,52 @@ class AsyncPlaywrightSolver(AsyncSolver):
         solution = self.client.arced_slide(request)
         await self._drag_mouse_horizontal_with_overshoot(solution.pixels_from_slider_origin, start_x, start_y)
         await self.page.mouse.up()
+    
+
+    async def solve_semantic_shapes(self) -> None:
+        """Solves the shapes challenge where an image and some text are presented.
+        Implements various checks to deal with strange behavior from temu captcha.
+        For example, temu shows a loading icon which makes the challenge impossible to click."""
+        for _ in range(3):
+            try:
+                for i in range(-3, 0):
+                    LOGGER.debug(f"solving shapes in in {-1 * i}")
+                    await asyncio.sleep(1)
+
+                image_b64 = await self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                challenge = await self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
+                
+                if self.dump_requests:
+                    dump_to_json(request, "semantic_shapes_request.json")
+                
+                resp = self.client.semantic_shapes(request)
+                challenge_current = await self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                
+                if challenge != challenge_current:
+                    LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
+                    await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    continue
+
+                await self._click_proportional(SEMANTIC_SHAPES_IMAGE, resp.proportion_x, resp.proportion_y, iframe_selector=SEMANTIC_SHAPES_IFRAME)                
+                LOGGER.debug("clicked answer...")
+                
+                for i in range(-5, 0):
+                    LOGGER.debug(f"validating answer in {-1 * i}")
+                    await asyncio.sleep(1)
+
+                if await self.captcha_is_present(1):
+                    LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
+                    await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    continue
+                
+                LOGGER.debug("solved semantic shapes")
+                return
+
+            except BadRequest as e:
+                LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
+                await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                await asyncio.sleep(3)
 
     
     async def any_selector_in_list_present(self, selectors: list[str]) -> bool:
@@ -193,12 +247,12 @@ class AsyncPlaywrightSolver(AsyncSolver):
         bg_image_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
         slide_bar_width = bg_image_bounding_box["width"]
         return slide_bar_width
-
     async def _click_proportional(
             self,
-            bounding_box: FloatRect,
+            selector: str,
             proportion_x: float,
-            proportion_y: float
+            proportion_y: float,
+            iframe_selector: str | None = None
         ) -> None:
         """Click an element inside its bounding box at a point defined by the proportions of x and y
         to the width and height of the entire element
@@ -208,16 +262,12 @@ class AsyncPlaywrightSolver(AsyncSolver):
             proportion_x: float from 0 to 1 defining the proportion x location to click 
             proportion_y: float from 0 to 1 defining the proportion y location to click 
         """
-        x_origin = bounding_box["x"]
-        y_origin = bounding_box["y"]
+        bounding_box = await self._get_element_bounding_box(selector, iframe_selector=iframe_selector)
         x_offset = (proportion_x * bounding_box["width"])
         y_offset = (proportion_y * bounding_box["height"]) 
-        await self.page.mouse.move(x_origin + x_offset, y_origin + y_offset)
-        await asyncio.sleep(random.randint(1, 10) / 11)
-        await self.page.mouse.down()
-        await asyncio.sleep(0.001337)
-        await self.page.mouse.up()
-        await asyncio.sleep(random.randint(1, 10) / 11)
+        await self._get_locator(selector, iframe_selector=iframe_selector).click(position={"x": x_offset, "y": y_offset}, force=True)
+        LOGGER.debug(f"clicked {selector} at offset {x_offset}, {y_offset}")
+    
 
     async def _drag_mouse_horizontal_with_overshoot(self, x_distance: int, start_x_coord: float, start_y_coord: float) -> None:
         await self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=100)
@@ -261,8 +311,8 @@ class AsyncPlaywrightSolver(AsyncSolver):
             piece_center=piece_center
         )
 
-    async def _get_element_bounding_box(self, selector: str) -> FloatRect:
-        box = await self.page.locator(selector).bounding_box()
+    async def _get_element_bounding_box(self, selector: str, iframe_selector: str | None = None) -> FloatRect:
+        box = await self._get_locator(selector, iframe_selector).bounding_box()
         if box is None:
             raise ValueError("Bounding box for slide bar was none")
         return box
@@ -274,27 +324,31 @@ class AsyncPlaywrightSolver(AsyncSolver):
         x, y = get_center(box["x"], box["y"], box["width"], box["height"])
         await self.page.mouse.move(x + x_offset, y + y_offset)
 
-    
-    async def get_b64_img_from_src(self, selector: str) -> str:
+    async def get_b64_img_from_src(self, selector: str, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
-        e = self.page.locator(selector)
+        e = self._get_locator(selector, iframe_selector=iframe_selector)
         url = await e.get_attribute("src")
         if not url:
             raise ValueError("element " + selector + " had no url")
         _, data = url.split(",")
+        LOGGER.debug("got b64 image from data url")
         return data
 
-    async def _compute_puzzle_slide_distance(self, proportion_x: float) -> int:
-        e = self.page.locator("#captcha-verify-image")
-        box = await e.bounding_box()
-        if box:
-            return int(proportion_x * box["width"])
-        raise AttributeError("#captcha-verify-image was found but had no bouding box")
+    def _get_locator_from_frame(self, selector: str, iframe_selector: str = "frame") -> Locator:
+        return self.page.frame_locator(iframe_selector).locator(selector)
 
-    async def _get_element_width(self, selector: str) -> float:
-        e = self.page.locator(selector)
-        box = await e.bounding_box()
-        if box:
-            return int(box["width"])
-        raise AttributeError(".captcha_verify_slide--slidebar was found but had no bouding box")
+    def _get_locator(self, selector: str, iframe_selector: str | None = None) -> Locator:
+        if iframe_selector:
+            return self._get_locator_from_frame(selector, iframe_selector)
+        else:
+            return self.page.locator(selector)
+
+    async def _get_element_text(self, selector: str, iframe_selector: str | None = None) -> str:
+        """Get the text of an element"""
+        e = self._get_locator(selector, iframe_selector=iframe_selector)
+        text_content = await e.text_content()
+        if not text_content:
+            raise ValueError("element " + selector + " had no text content")
+        LOGGER.debug(f"{selector} has text: {text_content}")
+        return text_content
 
