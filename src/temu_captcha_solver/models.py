@@ -7,6 +7,11 @@ def dump_to_json(obj: BaseModel, filename: str) -> None:
     with open(filename, "w") as f:
         json.dump(obj.model_dump(), f)
 
+class SemanticShapesRequest(BaseModel):
+    """Single image with a text challenge"""
+    image_b64: str
+    challenge: str
+
 class PuzzleCaptchaResponse(BaseModel):
     """This object contains data about the location
     of the slider button within its slide. The proportion x

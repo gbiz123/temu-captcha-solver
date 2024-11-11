@@ -1,11 +1,12 @@
 """This class handles the captcha solving for selenium users"""
 
-import json
+from contextlib import contextmanager
 import logging
 import math
 import random
+from select import select
 import time
-from typing import Any
+from typing import Any, Callable, Generator
 from playwright.sync_api import FloatRect
 
 from selenium.webdriver import ActionChains, Chrome
@@ -32,10 +33,14 @@ from .selectors import (
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
+    SEMANTIC_SHAPES_CHALLENGE_TEXT,
+    SEMANTIC_SHAPES_IFRAME,
+    SEMANTIC_SHAPES_IMAGE,
+    SEMANTIC_SHAPES_REFRESH_BUTTON,
 ) 
  
-from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, dump_to_json
-from .api import ApiClient
+from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, SemanticShapesRequest, dump_to_json
+from .api import ApiClient, BadRequest
 from .syncsolver import SyncSolver
 
 LOGGER = logging.getLogger(__name__)
@@ -112,6 +117,52 @@ class SeleniumSolver(SyncSolver):
         actions.perform()
         LOGGER.debug("done")
 
+    def solve_semantic_shapes(self) -> None:
+        """Solves the shapes challenge where an image and some text are presented.
+        Implements various checks to deal with strange behavior from temu captcha.
+        For example, temu shows a loading icon which makes the challenge impossible to click."""
+        for _ in range(3):
+            try:
+                for i in range(-3, 0):
+                    LOGGER.debug(f"solving shapes in in {-1 * i}")
+                    time.sleep(1)
+
+                with self._in_iframe(SEMANTIC_SHAPES_IFRAME):
+                    image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE)
+                    challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
+                    request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
+                    
+                    if self.dump_requests:
+                        dump_to_json(request, "semantic_shapes_request.json")
+                    
+                    resp = self.client.semantic_shapes(request)
+                    challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
+                    
+                    if challenge != challenge_current:
+                        LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
+                        self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
+                        continue
+
+                    self._click_proportional(self._get_element(SEMANTIC_SHAPES_IMAGE), resp.proportion_x, resp.proportion_y)                
+                    LOGGER.debug("clicked answer...")
+                    
+                    for i in range(-5, 0):
+                        LOGGER.debug(f"validating answer in {-1 * i}")
+                        time.sleep(1)
+
+                    if self.captcha_is_present(1):
+                        LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
+                        self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
+                        continue
+                    
+                    LOGGER.debug("solved semantic shapes")
+                    return
+
+            except BadRequest as e:
+                LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
+                self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
+                time.sleep(3)
+    
     def solve_arced_slide(self) -> None:
         """Solves the arced slide puzzle. This challenge is similar to the puzzle
         challenge, but the puzzle piece travels in an arc, hence then name arced slide.
@@ -145,13 +196,21 @@ class SeleniumSolver(SyncSolver):
                     .pause(0.01)
         actions.release().perform()
 
-    def get_b64_img_from_src(self, selector: str) -> str:
+    def get_b64_img_from_src(self, selector: str, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
-        e = self.chromedriver.find_element(By.CSS_SELECTOR, selector)
-        url = e.get_attribute("src")
-        if not url:
-            raise ValueError("Could not get image source for " + selector)
-        return url.split(",")[1]
+        if iframe_selector:
+            with self._in_iframe(iframe_selector):
+                e = self.chromedriver.find_element(By.CSS_SELECTOR, selector)
+                url = e.get_attribute("src")
+                if not url:
+                    raise ValueError("Could not get image source for " + selector)
+                return url.split(",")[1]
+        else:
+            e = self.chromedriver.find_element(By.CSS_SELECTOR, selector)
+            url = e.get_attribute("src")
+            if not url:
+                raise ValueError("Could not get image source for " + selector)
+            return url.split(",")[1]
 
     def _move_mouse_horizontal_with_overshoot(self, x: int, actions: ActionChains) -> None:
         time.sleep(0.1)
@@ -275,6 +334,56 @@ class SeleniumSolver(SyncSolver):
             piece_center=piece_center
         )
         
+    def _get_element_text(self, selector: str, iframe_selector: str | None = None) -> str:
+        """Get the text of an element"""
+        e = self._get_element(selector, iframe_selector=iframe_selector)
+        text_content = e.text
+        if not text_content:
+            raise ValueError("element " + selector + " had no text content")
+        return text_content
+
+    def _get_element(self, selector: str, iframe_selector: str | None = None) -> WebElement:
+        if iframe_selector:
+            with self._in_iframe(iframe_selector):
+                return self.chromedriver.find_element(By.CSS_SELECTOR, selector)
+        else:
+            return self.chromedriver.find_element(By.CSS_SELECTOR, selector)
+
+    @contextmanager
+    def _in_iframe(self, iframe_selector: str) -> Generator[Any, Any, Any]:
+        """Context manager to  perform action in iframe"""
+        try:
+            frame = self.chromedriver.find_element(By.CSS_SELECTOR, iframe_selector)
+            self.chromedriver.switch_to.frame(frame)
+            yield
+        finally:
+            self.chromedriver.switch_to.default_content()
+
+    def _click_proportional(
+            self,
+            element: WebElement,
+            proportion_x: float,
+            proportion_y: float
+        ) -> None:
+        """Click an element inside its bounding box at a point defined by the proportions of x and y
+        to the width and height of the entire element
+
+        Args:
+            element: WebElement to click inside
+            proportion_x: float from 0 to 1 defining the proportion x location to click 
+            proportion_y: float from 0 to 1 defining the proportion y location to click 
+        """
+        x_origin = element.location["x"]
+        y_origin = element.location["y"]
+        x_offset = (proportion_x * element.size["width"])
+        y_offset = (proportion_y * element.size["height"]) 
+        action = ActionBuilder(self.chromedriver)
+        action.pointer_action \
+            .move_to_location(x_origin + x_offset, y_origin + y_offset) \
+            .pause(random.randint(1, 10) / 11) \
+            .click() \
+            .pause(random.randint(1, 10) / 11)
+        action.perform()
 
     def _get_element_bounding_box(self, e: WebElement) -> FloatRect:
         loc = e.location

@@ -25,16 +25,28 @@ proxy = {
     "password": "Toughproxies_123"
 }
 
+def test_solve_captcha_on_temu_open_no_stealth(caplog):
+    caplog.set_level(logging.DEBUG)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, proxy=None)
+        page = browser.new_page()
+        config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
+        # stealth_sync(page, config)
+        page.goto("https://www.temu.com")
+        sadcaptcha = PlaywrightSolver(page, os.environ["API_KEY"], dump_requests=True)
+        input()
+        sadcaptcha.solve_captcha_if_present()
+        assert sadcaptcha.captcha_is_not_present()
+
 def test_solve_captcha_on_temu_open(caplog):
     caplog.set_level(logging.DEBUG)
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, proxy=proxy)
-        # browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=False, proxy=None)
         page = browser.new_page()
         config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
         stealth_sync(page, config)
         page.goto("https://www.temu.com")
-        sadcaptcha = PlaywrightSolver(page, os.environ["API_KEY"])
+        sadcaptcha = PlaywrightSolver(page, os.environ["API_KEY"], dump_requests=True)
         input()
         sadcaptcha.solve_captcha_if_present()
         assert sadcaptcha.captcha_is_not_present()

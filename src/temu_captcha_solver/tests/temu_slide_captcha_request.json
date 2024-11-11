@@ -3,7 +3,7 @@
   "piece_image_b64": "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",
   "slide_piece_trajectory": [
     {
-      "slider_button_proportion_x": 0.0,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": 0.0,
       "piece_center": {
         "proportion_x": 0.08695652173913043,
@@ -11,7 +11,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.00966183574879227,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.841872,
       "piece_center": {
         "proportion_x": 0.08695652173913043,
@@ -19,7 +19,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.01932367149758454,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.841872,
       "piece_center": {
         "proportion_x": 0.08695652173913043,
@@ -27,7 +27,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.028985507246376812,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.859551,
       "piece_center": {
         "proportion_x": 0.0893719806763285,
@@ -35,7 +35,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.03864734299516908,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.859551,
       "piece_center": {
         "proportion_x": 0.0893719806763285,
@@ -43,7 +43,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.04830917874396135,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.877601,
       "piece_center": {
         "proportion_x": 0.09178743961352658,
@@ -51,7 +51,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.057971014492753624,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.896029,
       "piece_center": {
         "proportion_x": 0.09420289855072464,
@@ -59,7 +59,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.06763285024154589,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.914845,
       "piece_center": {
         "proportion_x": 0.0966183574879227,
@@ -67,7 +67,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.07729468599033816,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.934056,
       "piece_center": {
         "proportion_x": 0.09903385328209918,
@@ -75,7 +75,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.08695652173913043,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -0.973695,
       "piece_center": {
         "proportion_x": 0.10386473429951691,
@@ -83,7 +83,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.0966183574879227,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.01502,
       "piece_center": {
         "proportion_x": 0.10869565217391304,
@@ -91,7 +91,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.10628019323671498,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.03633,
       "piece_center": {
         "proportion_x": 0.1111110742541327,
@@ -99,7 +99,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.11594202898550725,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.08031,
       "piece_center": {
         "proportion_x": 0.11594206584248566,
@@ -107,7 +107,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.12560386473429952,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.12615,
       "piece_center": {
         "proportion_x": 0.12077291000292496,
@@ -115,7 +115,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.13526570048309178,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.19858,
       "piece_center": {
         "proportion_x": 0.12801936052847598,
@@ -123,7 +123,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.14492753623188406,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.24944,
       "piece_center": {
         "proportion_x": 0.13285024154589373,
@@ -131,7 +131,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.15458937198067632,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.32979,
       "piece_center": {
         "proportion_x": 0.14009658150050952,
@@ -139,7 +139,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.1642512077294686,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.41531,
       "piece_center": {
         "proportion_x": 0.1473429583121037,
@@ -147,7 +147,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.17391304347826086,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.50633,
       "piece_center": {
         "proportion_x": 0.15458937198067632,
@@ -155,7 +155,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.18357487922705315,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.60319,
       "piece_center": {
         "proportion_x": 0.16183574879227053,
@@ -163,7 +163,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.1932367149758454,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.70627,
       "piece_center": {
         "proportion_x": 0.16908212560386474,
@@ -171,7 +171,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.2028985507246377,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.85407,
       "piece_center": {
         "proportion_x": 0.17874392449567858,
@@ -179,7 +179,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.21256038647342995,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -1.97325,
       "piece_center": {
         "proportion_x": 0.18599037502122961,
@@ -187,7 +187,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.2222222222222222,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -2.14413,
       "piece_center": {
         "proportion_x": 0.19565213705606507,
@@ -195,7 +195,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.2318840579710145,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -2.32977,
       "piece_center": {
         "proportion_x": 0.20531397280485733,
@@ -203,7 +203,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.24154589371980675,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -2.58451,
       "piece_center": {
         "proportion_x": 0.21739130434782608,
@@ -211,7 +211,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.25120772946859904,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -2.80815,
       "piece_center": {
         "proportion_x": 0.22705314009661837,
@@ -219,7 +219,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.2608695652173913,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -3.05105,
       "piece_center": {
         "proportion_x": 0.23671501270238904,
@@ -227,7 +227,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.27053140096618356,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -3.38427,
       "piece_center": {
         "proportion_x": 0.24879227053140096,
@@ -235,7 +235,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.28019323671497587,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -3.75364,
       "piece_center": {
         "proportion_x": 0.2608695283604129,
@@ -243,7 +243,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.2898550724637681,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -4.163,
       "piece_center": {
         "proportion_x": 0.27294689676036005,
@@ -251,7 +251,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.2995169082125604,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -4.61656,
       "piece_center": {
         "proportion_x": 0.2850241914463504,
@@ -259,7 +259,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.30917874396135264,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -5.22569,
       "piece_center": {
         "proportion_x": 0.2995169082125604,
@@ -267,7 +267,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.3188405797101449,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -5.79331,
       "piece_center": {
         "proportion_x": 0.3115942028985507,
@@ -275,7 +275,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.3285024154589372,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -6.55477,
       "piece_center": {
         "proportion_x": 0.3260868828077823,
@@ -283,7 +283,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.33816425120772947,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -7.41377,
       "piece_center": {
         "proportion_x": 0.34057971014492755,
@@ -291,7 +291,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.34782608695652173,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -8.38166,
       "piece_center": {
         "proportion_x": 0.35507246376811596,
@@ -299,7 +299,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.357487922705314,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -9.4706,
       "piece_center": {
         "proportion_x": 0.3695652173913043,
@@ -307,7 +307,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.3671497584541063,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -10.9111,
       "piece_center": {
         "proportion_x": 0.3864734299516908,
@@ -315,7 +315,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.37681159420289856,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -12.3065,
       "piece_center": {
         "proportion_x": 0.40096618357487923,
@@ -323,7 +323,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.3864734299516908,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -14.14,
       "piece_center": {
         "proportion_x": 0.4178743961352657,
@@ -331,7 +331,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.3961352657004831,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -16.2118,
       "piece_center": {
         "proportion_x": 0.43478260869565216,
@@ -339,7 +339,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.4057971014492754,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -18.5353,
       "piece_center": {
         "proportion_x": 0.45169082125603865,
@@ -347,7 +347,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.41545893719806765,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -21.1153,
       "piece_center": {
         "proportion_x": 0.46859903381642515,
@@ -355,7 +355,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.4251207729468599,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -24.3664,
       "piece_center": {
         "proportion_x": 0.48792270531400966,
@@ -363,7 +363,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.43478260869565216,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -27.8973,
       "piece_center": {
         "proportion_x": 0.5072463030976374,
@@ -371,7 +371,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.4444444444444444,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -31.1494,
       "piece_center": {
         "proportion_x": 0.5241545893719807,
@@ -379,7 +379,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.45410628019323673,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -34.9325,
       "piece_center": {
         "proportion_x": 0.5434782608695652,
@@ -387,7 +387,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.463768115942029,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -38.6171,
       "piece_center": {
         "proportion_x": 0.5628019323671497,
@@ -395,7 +395,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.47342995169082125,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -42.3947,
       "piece_center": {
         "proportion_x": 0.5845410628019324,
@@ -403,7 +403,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.4830917874396135,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -45.221,
       "piece_center": {
         "proportion_x": 0.6038647342995169,
@@ -411,7 +411,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.4927536231884058,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -419,7 +419,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5024154589371981,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -427,7 +427,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5120772946859904,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -435,7 +435,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5217391304347826,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -443,7 +443,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5314009661835749,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -451,7 +451,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5410628019323671,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -459,7 +459,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5507246376811594,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -467,7 +467,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5603864734299517,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -475,7 +475,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5700483091787439,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -483,7 +483,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5797101449275363,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -491,7 +491,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5893719806763285,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -499,7 +499,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.5990338164251208,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -507,7 +507,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6086956521739131,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -515,7 +515,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6183574879227053,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -523,7 +523,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6280193236714976,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -531,7 +531,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6376811594202898,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -539,7 +539,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6473429951690821,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -547,7 +547,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6570048309178744,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -555,7 +555,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6666666666666666,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -563,7 +563,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6763285024154589,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -571,7 +571,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6859903381642513,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -579,7 +579,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.6956521739130435,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -587,7 +587,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7053140096618358,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -595,7 +595,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.714975845410628,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -603,7 +603,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7246376811594203,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -611,7 +611,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7342995169082126,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -619,7 +619,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7439613526570048,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -627,7 +627,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7536231884057971,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -635,7 +635,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7632850241545893,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -643,7 +643,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7729468599033816,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -651,7 +651,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.782608695652174,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -659,7 +659,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.7922705314009661,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -667,7 +667,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8019323671497585,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -675,7 +675,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8115942028985508,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -683,7 +683,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.821256038647343,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -691,7 +691,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8309178743961353,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -699,7 +699,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8405797101449275,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -707,7 +707,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8502415458937198,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -715,7 +715,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8599033816425121,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -723,7 +723,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8695652173913043,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -731,7 +731,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8792270531400966,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -739,7 +739,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8888888888888888,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -747,7 +747,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.8985507246376812,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -755,7 +755,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9082125603864735,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -763,7 +763,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9178743961352657,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -771,7 +771,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.927536231884058,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -779,7 +779,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9371980676328503,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -787,7 +787,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9468599033816425,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -795,7 +795,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9565217391304348,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -803,7 +803,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.966183574879227,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -811,7 +811,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9758454106280193,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -819,7 +819,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9855072463768116,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
@@ -827,7 +827,7 @@
       }
     },
     {
-      "slider_button_proportion_x": 0.9951690821256038,
+      "pixels_from_slider_origin": 100,
       "piece_rotation_angle": -47.65,
       "piece_center": {
         "proportion_x": 0.6256038647342995,
