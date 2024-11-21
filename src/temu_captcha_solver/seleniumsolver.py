@@ -143,8 +143,14 @@ class SeleniumSolver(SyncSolver):
                         self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
                         continue
 
-                    self._click_proportional(self._get_element(SEMANTIC_SHAPES_IMAGE), resp.proportion_x, resp.proportion_y)                
-                    LOGGER.debug("clicked answer...")
+                    for point in resp.proportional_points:
+                        self._click_proportional(
+                            self.chromedriver.find_element(SEMANTIC_SHAPES_IMAGE),
+                            point.proportion_x,
+                            point.proportion_y,
+                        )                
+                        time.sleep(1)
+                        LOGGER.debug("clicked answer...")
                     
                     for i in range(-5, 0):
                         LOGGER.debug(f"validating answer in {-1 * i}")

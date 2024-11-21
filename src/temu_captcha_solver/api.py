@@ -3,7 +3,7 @@ import pydantic
 import requests
 import logging
 
-from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest
+from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,12 +40,20 @@ class ApiClient:
         LOGGER.debug("Got API response: " + str(result))
         return ArcedSlideCaptchaResponse(pixels_from_slider_origin=result["pixelsFromSliderOrigin"])
 
-    def semantic_shapes(self, request: SemanticShapesRequest) -> ProportionalPoint:
+    def semantic_shapes(self, request: SemanticShapesRequest) -> SemanticShapesResponse:
         """Get the correct place to click to answer the challenge"""
         resp = self._make_post_request(self._SEMANTIC_SHAPES_URL, request)
         result = resp.json()
         LOGGER.debug("Got API response: " + str(result))
-        return ProportionalPoint(proportion_x=result["proportionX"], proportion_y=result["proportionY"])
+        return SemanticShapesResponse(
+            proportional_points=[
+                ProportionalPoint(
+                    proportion_x=point["proportionX"],
+                    proportion_y=point["proportionY"]
+                )
+                for point in result["proportionalPoints"]
+            ]
+        )
 
     def _make_post_request(self, url: str, data: pydantic.BaseModel | dict[str, Any]) -> requests.Response:
         if isinstance(data, pydantic.BaseModel):

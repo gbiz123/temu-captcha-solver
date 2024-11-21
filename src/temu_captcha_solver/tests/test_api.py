@@ -4,7 +4,7 @@ import os
 
 from ..downloader import download_image_b64
 from ..api import ApiClient
-from temu_captcha_solver.models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest
+from temu_captcha_solver.models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse
 
 api_client = ApiClient(os.environ["API_KEY"])
 
@@ -26,5 +26,5 @@ def test_semantic_shapes():
 
     challenge = "Please click on the lowercase letter corresponding to the green letter."
     res = api_client.semantic_shapes(SemanticShapesRequest(image_b64=shapes, challenge=challenge))
-    assert isinstance(res, ProportionalPoint)
+    assert isinstance(res, SemanticShapesResponse)
 

@@ -162,8 +162,15 @@ class AsyncPlaywrightSolver(AsyncSolver):
                     await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
                     continue
 
-                await self._click_proportional(SEMANTIC_SHAPES_IMAGE, resp.proportion_x, resp.proportion_y, iframe_selector=SEMANTIC_SHAPES_IFRAME)                
-                LOGGER.debug("clicked answer...")
+                for point in resp.proportional_points:
+                    await self._click_proportional(
+                        SEMANTIC_SHAPES_IMAGE,
+                        point.proportion_x,
+                        point.proportion_y,
+                        iframe_selector=SEMANTIC_SHAPES_IFRAME
+                    )                
+                    await asyncio.sleep(1)
+                    LOGGER.debug("clicked answer...")
                 
                 for i in range(-5, 0):
                     LOGGER.debug(f"validating answer in {-1 * i}")

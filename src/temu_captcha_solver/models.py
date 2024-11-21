@@ -33,6 +33,10 @@ class ProportionalPoint(BaseModel):
     proportion_x: float
     proportion_y: float
 
+class SemanticShapesResponse(BaseModel):
+    """List of proportional points"""
+    proportional_points: list[ProportionalPoint]
+
 class ArcedSlideTrajectoryElement(BaseModel):
     """This object represents a point on the slider's trajectory.
     It contains data about the slider piece location and its rotation,
@@ -53,3 +57,4 @@ class ArcedSlideCaptchaRequest(BaseModel):
     puzzle_image_b64: str
     piece_image_b64: str
     slide_piece_trajectory: list[ArcedSlideTrajectoryElement]
+
