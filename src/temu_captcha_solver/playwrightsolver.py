@@ -8,6 +8,8 @@ from playwright.sync_api import FloatRect, Locator, Page, expect
 from playwright.sync_api import TimeoutError
 import time
 
+from temu_captcha_solver.plawright_util import wait_for_locator_to_be_stable
+
 from .syncsolver import SyncSolver
 
 from .selectors import (
@@ -61,12 +63,14 @@ class PlaywrightSolver(SyncSolver):
             sadcaptcha_api_key: str,
             headers: dict[str, Any] | None = None, 
             proxy: str | None = None,
-            dump_requests: bool = False
+            dump_requests: bool = False,
+            mouse_step_size: int = 5
         ) -> None:
         self.page = page
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers
         self.proxy = proxy
+        self.mouse_step_size = mouse_step_size
         super().__init__(dump_requests)
 
     
@@ -234,15 +238,16 @@ class PlaywrightSolver(SyncSolver):
         trajectory: list[ArcedSlideTrajectoryElement] = []
 
         times_piece_did_not_move = 0
-        for pixel in range(0, int(slide_bar_width), self.STEP_SIZE_PIXELS):
+        for pixel in range(0, int(slide_bar_width), self.mouse_step_size):
             self.page.mouse.move(slide_button_center_x + pixel, slide_button_center_y - pixel)  # - pixel is to drag it diagonally
+            wait_for_locator_to_be_stable(slider_piece_locator)
             trajectory_element = self._get_arced_slide_trajectory_element(
                 pixel,
                 puzzle_img_bounding_box,
                 slider_piece_locator
             )
             trajectory.append(trajectory_element)
-            if not len(trajectory) > 100:
+            if not len(trajectory) > 100 / self.mouse_step_size:
                 continue
             if piece_is_not_moving(trajectory):
                 times_piece_did_not_move += 1
