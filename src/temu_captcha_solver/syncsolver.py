@@ -14,7 +14,7 @@ class SyncSolver(ABC):
     def __init__(self, dump_requests: bool = False):
         self.dump_requests = dump_requests
 
-    def solve_captcha_if_present(self, captcha_detect_timeout: int = 15, retries: int = 3) -> None:
+    def solve_captcha_if_present(self, captcha_detect_timeout: int = 5, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
 
         Args:
@@ -36,7 +36,7 @@ class SyncSolver(ABC):
             if self.captcha_is_not_present(timeout=5):
                 return
             else:
-                time.sleep(5)
+                continue
 
     def identify_captcha(self) -> CaptchaType:
         for _ in range(30):

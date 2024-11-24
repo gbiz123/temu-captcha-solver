@@ -15,7 +15,7 @@ class AsyncSolver(ABC):
     def __init__(self, dump_requests: bool = False):
         self.dump_requests = dump_requests
 
-    async def solve_captcha_if_present(self, captcha_detect_timeout: int = 15, retries: int = 3) -> None:
+    async def solve_captcha_if_present(self, captcha_detect_timeout: int = 5, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
 
         Args:
@@ -37,7 +37,7 @@ class AsyncSolver(ABC):
             if await self.captcha_is_not_present(timeout=5):
                 return
             else:
-                await asyncio.sleep(5)
+                continue
 
     async def identify_captcha(self) -> CaptchaType:
         for _ in range(30):
