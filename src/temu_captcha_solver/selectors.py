@@ -9,11 +9,25 @@ PUZZLE_PUZZLE_IMAGE_SELECTOR = "#slider > img"
 PUZZLE_PIECE_IMAGE_SELECTOR = "#img-button > img"
 PUZZLE_UNIQUE_IDENTIFIERS = ["#Slider"]
 
-SEMANTIC_SHAPES_IFRAME = ".iframe-3eaNR"
+SEMANTIC_SHAPES_IFRAME = ".iframe-3eaNR" # TODO: Make this a more universal selector
 SEMANTIC_SHAPES_CHALLENGE_ROOT_ELE = "#Picture"
 SEMANTIC_SHAPES_CHALLENGE_TEXT = ".picture-text-2Alt0"
 SEMANTIC_SHAPES_IMAGE = "#captchaImg"
 SEMANTIC_SHAPES_REFRESH_BUTTON = ".refresh-27d6x"
 SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_IFRAME]
 
-CAPTCHA_PRESENCE_INDICATORS = ["#slide-button", "#Slider", "#slider", SEMANTIC_SHAPES_IFRAME]
+THREE_BY_THREE_IMAGE = "img.loaded"
+THREE_BY_THREE_TEXT = "div[class^=baseDialog] div[class^=subTitle]"
+THREE_BY_THREE_CONFIRM_BUTTON = "div[class^=baseDialog] div[role=button]:has(span)"
+THREE_BY_THREE_UNIQUE_IDENTIFIERS = ["#imageSemantics img.loaded"]
+
+# Occassionally Temu shows a familiar challenge but it's in an iframe
+# Need a way to account for occasions when other challenges are nested in iframe
+
+CAPTCHA_PRESENCE_INDICATORS = [
+    "#imageSemantics img.loaded",
+    "#slide-button",
+    "#Slider",
+    "#slider",
+    SEMANTIC_SHAPES_IFRAME
+]
