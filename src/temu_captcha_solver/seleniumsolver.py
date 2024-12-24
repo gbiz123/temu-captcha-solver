@@ -147,7 +147,7 @@ class SeleniumSolver(SyncSolver):
 
                     for point in resp.proportional_points:
                         self._click_proportional(
-                            self.chromedriver.find_element(SEMANTIC_SHAPES_IMAGE),
+                            self.chromedriver.find_element(By.CSS_SELECTOR, SEMANTIC_SHAPES_IMAGE),
                             point.proportion_x,
                             point.proportion_y,
                         )                
