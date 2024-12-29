@@ -4,8 +4,10 @@ import logging
 import time
 from abc import ABC, abstractmethod
 
+from playwright.sync_api import Locator, Page
+
 from temu_captcha_solver.captchatype import CaptchaType
-from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_IFRAME, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS
+from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -13,6 +15,7 @@ class SyncSolver(ABC):
 
     def __init__(self, dump_requests: bool = False):
         self.dump_requests = dump_requests
+        self.page: Page
 
     def solve_captcha_if_present(self, captcha_detect_timeout: int = 5, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
@@ -21,6 +24,7 @@ class SyncSolver(ABC):
             captcha_detect_timeout: return if no captcha is detected in this many seconds
             retries: number of times to retry captcha
         """
+        self.switch_to_popup_if_present()
         for _ in range(retries):
             if not self.captcha_is_present(captcha_detect_timeout):
                 LOGGER.debug("Captcha is not present")
@@ -33,10 +37,20 @@ class SyncSolver(ABC):
                         self.solve_puzzle()
                     case CaptchaType.SEMANTIC_SHAPES:
                         self.solve_semantic_shapes()
+                    case CaptchaType.THREE_BY_THREE:
+                        self.solve_three_by_three()
             if self.captcha_is_not_present(timeout=5):
                 return
             else:
                 continue
+
+    def switch_to_popup_if_present(self):
+        try:
+            with self.page.expect_popup(timeout=5000) as popup_info:
+                self.page = popup_info.value
+                LOGGER.debug("popup present, changing page to popup")
+        except TimeoutError as e:
+            LOGGER.debug("no popup present")
 
     def identify_captcha(self) -> CaptchaType:
         for _ in range(30):
@@ -49,6 +63,9 @@ class SyncSolver(ABC):
             elif self.any_selector_in_list_present(SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS):
                 LOGGER.debug("detected semantic shapes")
                 return CaptchaType.SEMANTIC_SHAPES
+            elif self.any_selector_in_list_present(THREE_BY_THREE_UNIQUE_IDENTIFIERS):
+                LOGGER.debug("detected three by three")
+                return CaptchaType.THREE_BY_THREE
             else:
                 time.sleep(1)
         raise ValueError("Neither puzzle, arced slide, or semantic shapes was present")
@@ -74,7 +91,11 @@ class SyncSolver(ABC):
         pass
 
     @abstractmethod
-    def get_b64_img_from_src(self, selector: str) -> str:
+    def solve_three_by_three(self) -> None:
+        pass
+
+    @abstractmethod
+    def get_b64_img_from_src(self, element: str | Locator) -> str:
         pass
 
     @abstractmethod

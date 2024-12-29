@@ -4,7 +4,7 @@ import os
 
 from ..downloader import download_image_b64
 from ..api import ApiClient
-from temu_captcha_solver.models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse
+from temu_captcha_solver.models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
 
 api_client = ApiClient(os.environ["API_KEY"])
 
@@ -27,4 +27,10 @@ def test_semantic_shapes():
     challenge = "Please click on the lowercase letter corresponding to the green letter."
     res = api_client.semantic_shapes(SemanticShapesRequest(image_b64=shapes, challenge=challenge))
     assert isinstance(res, SemanticShapesResponse)
+
+def test_three_by_three():
+    with open("src/temu_captcha_solver/tests/three_by_three_request.json", "rb") as file:
+        data = json.load(file)
+        res = api_client.three_by_three(data)
+        assert isinstance(res, ThreeByThreeCaptchaResponse)
 

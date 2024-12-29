@@ -8,6 +8,7 @@ from playwright.sync_api import FloatRect, Locator, Page, expect
 from playwright.sync_api import TimeoutError
 import time
 
+from temu_captcha_solver.parsers import get_list_of_objects_of_interest
 from temu_captcha_solver.plawright_util import wait_for_locator_to_be_stable
 
 from .syncsolver import SyncSolver
@@ -21,11 +22,13 @@ from .selectors import (
     PUZZLE_BUTTON_SELECTOR,
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
-    SEMANTIC_SHAPES_CHALLENGE_ROOT_ELE,
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
     SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
+    THREE_BY_THREE_CONFIRM_BUTTON,
+    THREE_BY_THREE_IMAGE,
+    THREE_BY_THREE_TEXT,
 ) 
 
 from .geometry import (
@@ -40,6 +43,7 @@ from .models import (
     ArcedSlideCaptchaRequest,
     ArcedSlideTrajectoryElement,
     SemanticShapesRequest,
+    ThreeByThreeCaptchaRequest,
     dump_to_json
 ) 
 
@@ -76,15 +80,15 @@ class PlaywrightSolver(SyncSolver):
     
     def captcha_is_present(self, timeout: int = 15) -> bool:
         try:
-            captcha_locator = self.page.locator(CAPTCHA_PRESENCE_INDICATORS[0])
+            captcha_locator = self.page.locator(".bogus-classname-to-create-locator")
             for selector in CAPTCHA_PRESENCE_INDICATORS:
                 captcha_locator = captcha_locator.or_(self.page.locator(selector))
             
-            expect(captcha_locator.first).to_have_count(1, timeout=timeout * 1000)
+            expect(captcha_locator.first).not_to_have_count(0, timeout=timeout * 1000)
             LOGGER.debug("captcha is present")
             return True
-        except (TimeoutError, AssertionError):
-            LOGGER.debug("captcha is not present")
+        except (TimeoutError, AssertionError) as e:
+            LOGGER.debug("captcha is not present: " + str(e))
             return False
 
     
@@ -96,8 +100,8 @@ class PlaywrightSolver(SyncSolver):
             expect(captcha_locator.first).to_have_count(0, timeout=timeout * 1000)
             LOGGER.debug("captcha is not present")
             return True
-        except (TimeoutError, AssertionError):
-            LOGGER.debug("captcha is present")
+        except (TimeoutError, AssertionError) as e:
+            LOGGER.debug("captcha is present: " + str(e))
             return False
 
     
@@ -201,6 +205,24 @@ class PlaywrightSolver(SyncSolver):
                 LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
                 self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
                 time.sleep(3)
+
+
+    def solve_three_by_three(self) -> None:
+        image_locators = self.page.locator(THREE_BY_THREE_IMAGE).all()
+        images_b64: list[str] = []
+        for image_locator in image_locators:
+            images_b64.append(self.get_b64_img_from_src(image_locator))
+        challenge_text = self._get_element_text(THREE_BY_THREE_TEXT)
+        objects = get_list_of_objects_of_interest(challenge_text)
+        request = ThreeByThreeCaptchaRequest(objects_of_interest=objects, images=images_b64)
+        if self.dump_requests:
+            dump_to_json(request, "three_by_three_request.json")
+        resp = self.client.three_by_three(request)
+        for i in resp.solution_indices:
+            image_locator = self.page.locator(f"img[src*=\"{images_b64[i]}\"]") # Where src matches the desired image
+            image_locator.click()
+            time.sleep(1.337)
+        self._click_proportional(THREE_BY_THREE_CONFIRM_BUTTON, 0.5, 0.5)
 
     
     def any_selector_in_list_present(self, selectors: list[str], iframe_selector: str | None = None) -> bool:
@@ -356,13 +378,15 @@ class PlaywrightSolver(SyncSolver):
         x, y = get_center(box["x"], box["y"], box["width"], box["height"])
         self.page.mouse.move(x + x_offset, y + y_offset)
 
-    
-    def get_b64_img_from_src(self, selector: str, iframe_selector: str | None = None) -> str:
+    def get_b64_img_from_src(self, element: str | Locator, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
-        e = self._get_locator(selector, iframe_selector=iframe_selector)
+        if isinstance(element, str):
+            e = self._get_locator(element, iframe_selector=iframe_selector)
+        else:
+            e = element
         url = e.get_attribute("src")
         if not url:
-            raise ValueError("element " + selector + " had no url")
+            raise ValueError("element had no url")
         _, data = url.split(",")
         LOGGER.debug("got b64 image from data url")
         return data

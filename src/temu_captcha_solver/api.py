@@ -3,7 +3,7 @@ import pydantic
 import requests
 import logging
 
-from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse
+from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class ApiClient:
         self._PUZZLE_URL = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=" + api_key
         self._ARCED_SLIDE_URL = "https://www.sadcaptcha.com/api/v1/temu-arced-slide?licenseKey=" + api_key
         self._SEMANTIC_SHAPES_URL = "https://www.sadcaptcha.com/api/v1/semantic-shapes?licenseKey=" + api_key
+        self._THREE_BY_THREE_URL = "https://www.sadcaptcha.com/api/v1/temu-three-by-three?licenseKey=" + api_key
 
     def puzzle(self, puzzle_b64: str, piece_b64: str) -> PuzzleCaptchaResponse:
         """Slide the puzzle piece"""
@@ -31,7 +32,7 @@ class ApiClient:
         LOGGER.debug("Got API response: " + str(result))
         return PuzzleCaptchaResponse(slide_x_proportion=result.get("slideXProportion"))
 
-    def arced_slide(self, request: ArcedSlideCaptchaRequest) -> ArcedSlideCaptchaResponse:
+    def arced_slide(self, request: ArcedSlideCaptchaRequest | dict[str, Any]) -> ArcedSlideCaptchaResponse:
         """This is the Temu captcha where it's a puzzle slide, 
         but the piece travels in an unpredicatble trajectory and the 
         slide button is not correlated with the trajectory."""
@@ -40,7 +41,7 @@ class ApiClient:
         LOGGER.debug("Got API response: " + str(result))
         return ArcedSlideCaptchaResponse(pixels_from_slider_origin=result["pixelsFromSliderOrigin"])
 
-    def semantic_shapes(self, request: SemanticShapesRequest) -> SemanticShapesResponse:
+    def semantic_shapes(self, request: SemanticShapesRequest | dict[str, Any]) -> SemanticShapesResponse:
         """Get the correct place to click to answer the challenge"""
         resp = self._make_post_request(self._SEMANTIC_SHAPES_URL, request)
         result = resp.json()
@@ -54,6 +55,18 @@ class ApiClient:
                 for point in result["proportionalPoints"]
             ]
         )
+
+    def three_by_three(self, request: ThreeByThreeCaptchaRequest | dict[str, Any]) -> ThreeByThreeCaptchaResponse:
+        """Get the indices of correct inages to click, in the order they must be clicked.
+        Where the indeces correspond to the following panels:
+            0 1 2
+            3 4 5
+            6 7 8"""
+        resp = self._make_post_request(self._THREE_BY_THREE_URL, request)
+        result = resp.json()
+        LOGGER.debug("Got API response: " + str(result))
+        return ThreeByThreeCaptchaResponse(solution_indices=result["solutionIndices"])
+
 
     def _make_post_request(self, url: str, data: pydantic.BaseModel | dict[str, Any]) -> requests.Response:
         if isinstance(data, pydantic.BaseModel):

@@ -334,12 +334,15 @@ class AsyncPlaywrightSolver(AsyncSolver):
         x, y = get_center(box["x"], box["y"], box["width"], box["height"])
         await self.page.mouse.move(x + x_offset, y + y_offset)
 
-    async def get_b64_img_from_src(self, selector: str, iframe_selector: str | None = None) -> str:
+    async def get_b64_img_from_src(self, element: str | Locator, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
-        e = self._get_locator(selector, iframe_selector=iframe_selector)
+        if isinstance(element, str):
+            e = self._get_locator(element, iframe_selector=iframe_selector)
+        else:
+            e = element
         url = await e.get_attribute("src")
         if not url:
-            raise ValueError("element " + selector + " had no url")
+            raise ValueError("element had no url")
         _, data = url.split(",")
         LOGGER.debug("got b64 image from data url")
         return data

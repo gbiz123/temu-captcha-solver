@@ -60,20 +60,4 @@ class ArcedSlideCaptchaRequest(BaseModel):
 
 
 class ThreeByThreeCaptchaRequest(BaseModel):
-    """Contains data bout the 3x3 captcha.
-    This includes the names of the objects as a list
-    in the order they are meant to be selected. It
-    also includes the images as a list of base64 strings
-    where  indexes 0-2 are the top row, 3-5 are the
-    middle, and 6-8 are the bottom row.
-    """
-    objects_of_interest: list[str]
-    images: list[str]
-
-class ThreeByThreeCaptchaResponse(BaseModel):
-    """The indices of correct inages to click, in the order they must be clicked.
-    Where the indeces correspond to the following panels:
-        0 1 2
-        3 4 5
-        6 7 8"""
-    solution_indices: list[int]
+    """Contains data bout the 3x3 captcha. This includes the names of the objects as a list in the order they are meant to be selected. It also includes the images as a list of base64 strings where  indexes 0-2 are the top row, 3-5 are the middle, and 6-8 are the bottom row."""

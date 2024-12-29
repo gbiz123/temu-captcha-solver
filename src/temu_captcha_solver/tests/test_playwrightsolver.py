@@ -22,7 +22,7 @@ from ..playwrightsolver import PlaywrightSolver
 
 
 proxy = {
-    "server": "45.67.2.115:5689",
+    "server": "216.173.104.197:6334",
 }
 
 # def test_solve_captcha_on_temu_open_no_stealth(caplog):

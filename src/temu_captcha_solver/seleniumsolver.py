@@ -7,7 +7,7 @@ import random
 from select import select
 import time
 from typing import Any, Callable, Generator
-from playwright.sync_api import FloatRect
+from playwright.sync_api import FloatRect, Locator
 
 from selenium.webdriver import ActionChains, Chrome
 from selenium.webdriver.common.actions.action_builder import ActionBuilder
@@ -204,20 +204,26 @@ class SeleniumSolver(SyncSolver):
                     .pause(0.01)
         actions.release().perform()
 
-    def get_b64_img_from_src(self, selector: str, iframe_selector: str | None = None) -> str:
+    def get_b64_img_from_src(self, element: str | WebElement, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
         if iframe_selector:
             with self._in_iframe(iframe_selector):
-                e = self.chromedriver.find_element(By.CSS_SELECTOR, selector)
+                if isinstance(element, str):
+                    e = self.chromedriver.find_element(By.CSS_SELECTOR, element)
+                else:
+                    e = element
                 url = e.get_attribute("src")
                 if not url:
-                    raise ValueError("Could not get image source for " + selector)
+                    raise ValueError("Could not get image source for element")
                 return url.split(",")[1]
         else:
-            e = self.chromedriver.find_element(By.CSS_SELECTOR, selector)
+            if isinstance(element, str):
+                e = self.chromedriver.find_element(By.CSS_SELECTOR, element)
+            else:
+                e = element
             url = e.get_attribute("src")
             if not url:
-                raise ValueError("Could not get image source for " + selector)
+                raise ValueError("Could not get image source for elemenmt")
             return url.split(",")[1]
 
     def _move_mouse_horizontal_with_overshoot(self, x: int, actions: ActionChains) -> None:

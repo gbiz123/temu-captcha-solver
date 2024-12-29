@@ -14,11 +14,11 @@ SEMANTIC_SHAPES_CHALLENGE_ROOT_ELE = "#Picture"
 SEMANTIC_SHAPES_CHALLENGE_TEXT = ".picture-text-2Alt0"
 SEMANTIC_SHAPES_IMAGE = "#captchaImg"
 SEMANTIC_SHAPES_REFRESH_BUTTON = ".refresh-27d6x"
-SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_IFRAME]
+SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_IFRAME, SEMANTIC_SHAPES_IMAGE]
 
 THREE_BY_THREE_IMAGE = "img.loaded"
-THREE_BY_THREE_TEXT = "div[class^=baseDialog] div[class^=subTitle]"
-THREE_BY_THREE_CONFIRM_BUTTON = "div[class^=baseDialog] div[role=button]:has(span)"
+THREE_BY_THREE_TEXT = ".verifyDialog div[role=dialog]"
+THREE_BY_THREE_CONFIRM_BUTTON = ".verifyDialog div[role=button]:has(span)"
 THREE_BY_THREE_UNIQUE_IDENTIFIERS = ["#imageSemantics img.loaded"]
 
 # Occassionally Temu shows a familiar challenge but it's in an iframe

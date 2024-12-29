@@ -4,9 +4,11 @@ import logging
 import asyncio
 from abc import ABC, abstractmethod
 
+from playwright.async_api import Locator
+
 
 from temu_captcha_solver.captchatype import CaptchaType
-from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS
+from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +36,8 @@ class AsyncSolver(ABC):
                         await self.solve_puzzle()
                     case CaptchaType.SEMANTIC_SHAPES: 
                         await self.solve_semantic_shapes()
+                    case CaptchaType.THREE_BY_THREE:
+                        await self.solve_three_by_three()
             if await self.captcha_is_not_present(timeout=5):
                 return
             else:
@@ -50,6 +54,9 @@ class AsyncSolver(ABC):
             elif await self.any_selector_in_list_present(SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS):
                 LOGGER.debug("detected semantic shapes")
                 return CaptchaType.SEMANTIC_SHAPES
+            elif await self.any_selector_in_list_present(THREE_BY_THREE_UNIQUE_IDENTIFIERS):
+                LOGGER.debug("detected three by three")
+                return CaptchaType.THREE_BY_THREE
             else:
                 await asyncio.sleep(1)
         raise ValueError("Neither puzzle, or arced slide was present")
@@ -75,7 +82,11 @@ class AsyncSolver(ABC):
         pass
 
     @abstractmethod
-    async def get_b64_img_from_src(self, selector: str) -> str:
+    async def solve_three_by_three(self) -> None:
+        pass
+
+    @abstractmethod
+    async def get_b64_img_from_src(self, element: str | Locator) -> str:
         pass
 
     @abstractmethod
