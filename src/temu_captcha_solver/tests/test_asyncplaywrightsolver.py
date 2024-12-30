@@ -9,7 +9,7 @@ import pytest
 from ..asyncplaywrightsolver import AsyncPlaywrightSolver
 
 proxy = {
-    "server": "45.67.2.115:5689",
+    "server": "216.173.104.197:6334",
 }
 
 # @pytest.mark.asyncio

@@ -4,7 +4,7 @@ import logging
 import asyncio
 from abc import ABC, abstractmethod
 
-from playwright.async_api import Locator
+from playwright.async_api import Locator, Page
 
 
 from temu_captcha_solver.captchatype import CaptchaType
@@ -16,6 +16,7 @@ class AsyncSolver(ABC):
 
     def __init__(self, dump_requests: bool = False):
         self.dump_requests = dump_requests
+        self.page: Page
 
     async def solve_captcha_if_present(self, captcha_detect_timeout: int = 5, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
@@ -24,6 +25,7 @@ class AsyncSolver(ABC):
             captcha_detect_timeout: return if no captcha is detected in this many seconds
             retries: number of times to retry captcha
         """
+        await self.switch_to_popup_if_present()
         for _ in range(retries):
             if not await self.captcha_is_present(captcha_detect_timeout):
                 LOGGER.debug("Captcha is not present")
@@ -42,6 +44,14 @@ class AsyncSolver(ABC):
                 return
             else:
                 continue
+
+    async def switch_to_popup_if_present(self):
+        try:
+            async with self.page.expect_popup(timeout=5000) as popup_info:
+                self.page = await popup_info.value
+                LOGGER.debug("popup present, changing page to popup")
+        except TimeoutError as e:
+            LOGGER.debug("no popup present")
 
     async def identify_captcha(self) -> CaptchaType:
         for _ in range(30):
