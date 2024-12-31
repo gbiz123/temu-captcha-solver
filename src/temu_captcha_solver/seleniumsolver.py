@@ -4,9 +4,10 @@ from contextlib import contextmanager
 import logging
 import math
 import random
+from select import select
 import time
-from typing import Any
-from playwright.sync_api import FloatRect
+from typing import Any, Callable, Generator
+from playwright.sync_api import FloatRect, Locator
 
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains, Chrome
