@@ -47,7 +47,7 @@ class AsyncSolver(ABC):
 
     async def switch_to_popup_if_present(self):
         try:
-            async with self.page.expect_popup(timeout=5000) as popup_info:
+            async with self.page.expect_popup(timeout=1000) as popup_info:
                 self.page = await popup_info.value
                 LOGGER.debug("popup present, changing page to popup")
         except TimeoutError as e:

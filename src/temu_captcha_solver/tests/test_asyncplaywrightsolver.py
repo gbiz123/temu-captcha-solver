@@ -60,8 +60,8 @@ async def test_solve_captcha_at_temu_open(caplog):
         config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
         await stealth_async(page, config)
         await page.goto("https://www.temu.com")
-        sadcaptcha = AsyncPlaywrightSolver(page, os.environ["API_KEY"])
         input()
+        sadcaptcha = AsyncPlaywrightSolver(page, os.environ["API_KEY"])
         await sadcaptcha.solve_captcha_if_present()
         assert await sadcaptcha.captcha_is_not_present()
 

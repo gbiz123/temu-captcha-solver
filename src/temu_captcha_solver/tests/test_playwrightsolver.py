@@ -87,7 +87,7 @@ def test_solve_captcha_on_temu_open(caplog):
         config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
         stealth_sync(page, config)
         page.goto("https://www.temu.com")
-        sadcaptcha = PlaywrightSolver(page, os.environ["API_KEY"], dump_requests=True)
         input()
+        sadcaptcha = PlaywrightSolver(page, os.environ["API_KEY"], dump_requests=True)
         sadcaptcha.solve_captcha_if_present()
         assert sadcaptcha.captcha_is_not_present()

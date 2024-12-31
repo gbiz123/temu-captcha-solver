@@ -9,14 +9,9 @@ import undetected_chromedriver as uc
 
 from ..seleniumsolver import SeleniumSolver
 
-options = webdriver.ChromeOptions()
-options.add_argument("--headless=0")
-options.binary_location = "/usr/bin/google-chrome-stable"
-
-
 def make_driver() -> uc.Chrome:
     options = uc.ChromeOptions()
-    options.add_argument("--proxy-server=45.67.2.115:5689")
+    options.add_argument("--proxy-server=31.57.87.18:5703")
     return uc.Chrome(service=ChromeDriverManager().install(),
                      headless=False,
                      use_subprocess=False,
@@ -25,10 +20,11 @@ def make_driver() -> uc.Chrome:
 
 def make_driver_no_stealth() -> webdriver.Chrome:
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless=0")
     options.binary_location = "/usr/bin/google-chrome-stable"
-    options.add_argument("--proxy-server={PROXY}")
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    driver = webdriver.Chrome(service=webdriver.ChromeService(ChromeDriverManager().install()), options=options)
+    return driver
 
 # def test_solve_captcha_at_login(caplog):
 #     caplog.set_level(logging.DEBUG)

@@ -5,6 +5,10 @@ import time
 from abc import ABC, abstractmethod
 
 from playwright.sync_api import Locator, Page, TimeoutError
+from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 from temu_captcha_solver.captchatype import CaptchaType
 from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
@@ -15,7 +19,8 @@ class SyncSolver(ABC):
 
     def __init__(self, dump_requests: bool = False):
         self.dump_requests = dump_requests
-        self.page: Page
+        self.page: Page | None
+        self.chromedriver: WebDriver
 
     def solve_captcha_if_present(self, captcha_detect_timeout: int = 5, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
@@ -24,7 +29,7 @@ class SyncSolver(ABC):
             captcha_detect_timeout: return if no captcha is detected in this many seconds
             retries: number of times to retry captcha
         """
-        self.switch_to_popup_if_present()
+        self.switch_to_new_tab_if_present()
         for _ in range(retries):
             if not self.captcha_is_present(captcha_detect_timeout):
                 LOGGER.debug("Captcha is not present")
@@ -44,13 +49,27 @@ class SyncSolver(ABC):
             else:
                 continue
 
-    def switch_to_popup_if_present(self):
-        try:
-            with self.page.expect_popup(timeout=5000) as popup_info:
-                self.page = popup_info.value
+    def switch_to_new_tab_if_present(self):
+        if hasattr(self, "page"):
+            try:
+                with self.page.expect_popup(timeout=1000) as popup_info:
+                    self.page = popup_info.value
+                    LOGGER.debug("popup present, changing page to popup")
+            except TimeoutError as e:
+                LOGGER.debug("no popup present")
+        elif hasattr(self, "chromedriver"):
+            wait = WebDriverWait(self.chromedriver, 1)
+            original_window_count = len(self.chromedriver.window_handles)
+            original_windows = self.chromedriver.window_handles
+            try:
+                _ = wait.until(EC.number_of_windows_to_be(original_window_count + 1))
+                new_window = [win for win in self.chromedriver.window_handles if win not in original_windows][0]
+                self.chromedriver.switch_to.window(new_window)
                 LOGGER.debug("popup present, changing page to popup")
-        except TimeoutError as e:
-            LOGGER.debug("no popup present")
+            except TimeoutException:
+                LOGGER.debug("no popup present")
+        else:
+            raise AttributeError("both page and chromedriver were None")
 
     def identify_captcha(self) -> CaptchaType:
         for _ in range(30):

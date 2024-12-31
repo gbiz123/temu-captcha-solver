@@ -16,6 +16,7 @@ from selenium.webdriver.common.actions.pointer_input import PointerInput
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
+from temu_captcha_solver.parsers import get_list_of_objects_of_interest
 from temu_captcha_solver.selenium_util import wait_for_element_to_be_stable
 
 from .geometry import(
@@ -39,9 +40,12 @@ from .selectors import (
     SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
+    THREE_BY_THREE_CONFIRM_BUTTON,
+    THREE_BY_THREE_IMAGE,
+    THREE_BY_THREE_TEXT,
 ) 
  
-from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, SemanticShapesRequest, dump_to_json
+from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, SemanticShapesRequest, ThreeByThreeCaptchaRequest, dump_to_json
 from .api import ApiClient, BadRequest
 from .syncsolver import SyncSolver
 
@@ -203,6 +207,23 @@ class SeleniumSolver(SyncSolver):
                     .move_by_offset(-1, int(random.gauss(0, 5))) \
                     .pause(0.01)
         actions.release().perform()
+
+    def solve_three_by_three(self) -> None:
+        image_elements = self.chromedriver.find_elements(By.CSS_SELECTOR, THREE_BY_THREE_IMAGE)
+        images_b64: list[str] = []
+        for image_element in image_elements:
+            images_b64.append(self.get_b64_img_from_src(image_element))
+        challenge_text = self._get_element_text(THREE_BY_THREE_TEXT)
+        objects = get_list_of_objects_of_interest(challenge_text)
+        request = ThreeByThreeCaptchaRequest(objects_of_interest=objects, images=images_b64)
+        if self.dump_requests:
+            dump_to_json(request, "three_by_three_request.json")
+        resp = self.client.three_by_three(request)
+        for i in resp.solution_indices:
+            image_element = self.chromedriver.find_element(By.CSS_SELECTOR, f"img[src*=\"{images_b64[i]}\"]") # Where src matches the desired image
+            image_element.click()
+            time.sleep(1.337)
+        self._click_proportional(self.chromedriver.find_element(By.CSS_SELECTOR, THREE_BY_THREE_CONFIRM_BUTTON), 0.5, 0.5)
 
     def get_b64_img_from_src(self, element: str | WebElement, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
