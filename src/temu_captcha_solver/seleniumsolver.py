@@ -9,12 +9,15 @@ import time
 from typing import Any, Callable, Generator
 from playwright.sync_api import FloatRect, Locator
 
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains, Chrome
 from selenium.webdriver.common.actions.action_builder import ActionBuilder
 from selenium.webdriver.common.actions.interaction import POINTER_MOUSE
 from selenium.webdriver.common.actions.pointer_input import PointerInput
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.ui import WebDriverWait
 
 from temu_captcha_solver.parsers import get_list_of_objects_of_interest
 from temu_captcha_solver.selenium_util import wait_for_element_to_be_stable
@@ -246,6 +249,18 @@ class SeleniumSolver(SyncSolver):
             if not url:
                 raise ValueError("Could not get image source for elemenmt")
             return url.split(",")[1]
+
+    def switch_to_new_tab_if_present(self) -> None:
+        wait = WebDriverWait(self.chromedriver, 1)
+        original_window_count = len(self.chromedriver.window_handles)
+        original_windows = self.chromedriver.window_handles
+        try:
+            _ = wait.until(expected_conditions.number_of_windows_to_be(original_window_count + 1))
+            new_window = [win for win in self.chromedriver.window_handles if win not in original_windows][0]
+            self.chromedriver.switch_to.window(new_window)
+            LOGGER.debug("popup present, changing page to popup")
+        except TimeoutException:
+            LOGGER.debug("no popup present")
 
     def _move_mouse_horizontal_with_overshoot(self, x: int, actions: ActionChains) -> None:
         time.sleep(0.1)

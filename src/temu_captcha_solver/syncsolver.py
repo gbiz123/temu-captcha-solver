@@ -19,8 +19,6 @@ class SyncSolver(ABC):
 
     def __init__(self, dump_requests: bool = False):
         self.dump_requests = dump_requests
-        self.page: Page | None
-        self.chromedriver: WebDriver
 
     def solve_captcha_if_present(self, captcha_detect_timeout: int = 5, retries: int = 3) -> None:
         """Solves any captcha that is present, if one is detected
@@ -49,28 +47,6 @@ class SyncSolver(ABC):
             else:
                 continue
 
-    def switch_to_new_tab_if_present(self):
-        if hasattr(self, "page"):
-            try:
-                with self.page.expect_popup(timeout=1000) as popup_info:
-                    self.page = popup_info.value
-                    LOGGER.debug("popup present, changing page to popup")
-            except TimeoutError as e:
-                LOGGER.debug("no popup present")
-        elif hasattr(self, "chromedriver"):
-            wait = WebDriverWait(self.chromedriver, 1)
-            original_window_count = len(self.chromedriver.window_handles)
-            original_windows = self.chromedriver.window_handles
-            try:
-                _ = wait.until(EC.number_of_windows_to_be(original_window_count + 1))
-                new_window = [win for win in self.chromedriver.window_handles if win not in original_windows][0]
-                self.chromedriver.switch_to.window(new_window)
-                LOGGER.debug("popup present, changing page to popup")
-            except TimeoutException:
-                LOGGER.debug("no popup present")
-        else:
-            raise AttributeError("both page and chromedriver were None")
-
     def identify_captcha(self) -> CaptchaType:
         for _ in range(30):
             if self.any_selector_in_list_present(PUZZLE_UNIQUE_IDENTIFIERS):
@@ -88,6 +64,10 @@ class SyncSolver(ABC):
             else:
                 time.sleep(1)
         raise ValueError("Neither puzzle, arced slide, or semantic shapes was present")
+
+    @abstractmethod
+    def switch_to_new_tab_if_present(self) -> None:
+        pass
 
     @abstractmethod
     def captcha_is_present(self, timeout: int = 15) -> bool:

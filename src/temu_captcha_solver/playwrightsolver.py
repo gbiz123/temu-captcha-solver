@@ -235,6 +235,14 @@ class PlaywrightSolver(SyncSolver):
         LOGGER.debug("No selector in list found: " + ", ".join(selectors))
         return False
 
+    def switch_to_new_tab_if_present(self) -> None:
+        try:
+            with self.page.expect_popup(timeout=1000) as popup_info:
+                self.page = popup_info.value
+                LOGGER.debug("popup present, changing page to popup")
+        except TimeoutError as e:
+            LOGGER.debug("no popup present")
+
     
     def _gather_arced_slide_request_data(self, slide_button_center_x: float, slide_button_center_y: float) -> ArcedSlideCaptchaRequest:
         """Get the images and trajectory for arced slide request"""
