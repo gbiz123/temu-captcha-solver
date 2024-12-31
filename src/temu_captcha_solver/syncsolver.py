@@ -4,11 +4,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 
-from playwright.sync_api import Locator, Page, TimeoutError
-from selenium.webdriver.chrome.webdriver import WebDriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from playwright.sync_api import Locator
 
 from temu_captcha_solver.captchatype import CaptchaType
 from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
