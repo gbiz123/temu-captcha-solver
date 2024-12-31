@@ -9,6 +9,7 @@ src/temu_captcha_solver/captchatype.py
 src/temu_captcha_solver/downloader.py
 src/temu_captcha_solver/geometry.py
 src/temu_captcha_solver/models.py
+src/temu_captcha_solver/parsers.py
 src/temu_captcha_solver/plawright_util.py
 src/temu_captcha_solver/playwrightsolver.py
 src/temu_captcha_solver/selectors.py
