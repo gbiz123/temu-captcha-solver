@@ -10,12 +10,14 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, and three-
     <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="175px" height="150px" alt="temu slide Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-puzzle.webp" width="175px" height="150px" alt="Temu puzzle Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-shapes.webp" width="175px" height="150px" alt="Temu shapes Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/temu-items.webp" width="175px" height="150px" alt="Temu items Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-three-by-three-captcha.webp" width="175px" height="150px" alt="Temu 3x3 Captcha Solver">
 </div>
 
 - **Arced Slide** challenge is the one where there is a puzzle piece that travels in an unpredictable trajectory, and there are two possible locations where the solution may be.
 - **Puzzle slide** is unique in that the pieces relocate after you drag the slider.
 - **Shapes** challenge shows a picture of various objects and has an associated text challenge.
+- **Items** challenge shows a picture of various objects and has an associated text challenge.
 - **Three-by-three** challenge shows a 3x3 grid of images, and asks you to select images according to a text challenge.
     
 ## Requirements
