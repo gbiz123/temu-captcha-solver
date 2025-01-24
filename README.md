@@ -16,8 +16,8 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, and three-
 
 - **Arced Slide** challenge is the one where there is a puzzle piece that travels in an unpredictable trajectory, and there are two possible locations where the solution may be.
 - **Puzzle slide** is unique in that the pieces relocate after you drag the slider.
-- **Shapes** challenge shows a picture of various objects and has an associated text challenge.
-- **Items** challenge shows a picture of various objects and has an associated text challenge.
+- **Shapes (English only)** challenge shows a picture of various objects and has an associated text challenge.
+- **Items (English only)** challenge shows a picture of various objects and has an associated text challenge.
 - **Three-by-three** challenge shows a 3x3 grid of images, and asks you to select images according to a text challenge.
     
 ## Requirements
