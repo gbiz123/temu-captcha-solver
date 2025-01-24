@@ -9,12 +9,12 @@ PUZZLE_PUZZLE_IMAGE_SELECTOR = "#slider > img"
 PUZZLE_PIECE_IMAGE_SELECTOR = "#img-button > img"
 PUZZLE_UNIQUE_IDENTIFIERS = ["#Slider"]
 
-SEMANTIC_SHAPES_IFRAME = ".iframe-3eaNR" # TODO: Make this a more universal selector
+SEMANTIC_SHAPES_IFRAME = "iframe"
 SEMANTIC_SHAPES_CHALLENGE_ROOT_ELE = "#Picture"
-SEMANTIC_SHAPES_CHALLENGE_TEXT = ".picture-text-2Alt0"
+SEMANTIC_SHAPES_CHALLENGE_TEXT = "div[class^='picture-text'], div._2Alt0zsN"
 SEMANTIC_SHAPES_IMAGE = "#captchaImg"
-SEMANTIC_SHAPES_REFRESH_BUTTON = ".refresh-27d6x"
-SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_IFRAME, SEMANTIC_SHAPES_IMAGE]
+SEMANTIC_SHAPES_REFRESH_BUTTON = ".refresh-27d6x, .ZVIQM964"
+SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_IFRAME, ".iframe-3eaNR", ".iframe-8Vtge", "#captchaImg"]
 
 THREE_BY_THREE_IMAGE = "img.loaded"
 THREE_BY_THREE_TEXT = ".verifyDialog div[role=dialog]"
@@ -29,5 +29,6 @@ CAPTCHA_PRESENCE_INDICATORS = [
     "#slide-button",
     "#Slider",
     "#slider",
-    SEMANTIC_SHAPES_IFRAME
+    SEMANTIC_SHAPES_IFRAME,
+    "img._1fsu8Elk",
 ]

@@ -3,7 +3,7 @@ import pydantic
 import requests
 import logging
 
-from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, SemanticShapesResponse, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
+from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, MultiPointResponse, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class ApiClient:
         self._PUZZLE_URL = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=" + api_key
         self._ARCED_SLIDE_URL = "https://www.sadcaptcha.com/api/v1/temu-arced-slide?licenseKey=" + api_key
         self._SEMANTIC_SHAPES_URL = "https://www.sadcaptcha.com/api/v1/semantic-shapes?licenseKey=" + api_key
+        self._SEMANTIC_ITEMS_URL = "https://www.sadcaptcha.com/api/v1/semantic-items?licenseKey=" + api_key
         self._THREE_BY_THREE_URL = "https://www.sadcaptcha.com/api/v1/temu-three-by-three?licenseKey=" + api_key
 
     def puzzle(self, puzzle_b64: str, piece_b64: str) -> PuzzleCaptchaResponse:
@@ -41,12 +42,27 @@ class ApiClient:
         LOGGER.debug("Got API response: " + str(result))
         return ArcedSlideCaptchaResponse(pixels_from_slider_origin=result["pixelsFromSliderOrigin"])
 
-    def semantic_shapes(self, request: SemanticShapesRequest | dict[str, Any]) -> SemanticShapesResponse:
+    def semantic_shapes(self, request: SemanticShapesRequest | dict[str, Any]) -> MultiPointResponse:
         """Get the correct place to click to answer the challenge"""
         resp = self._make_post_request(self._SEMANTIC_SHAPES_URL, request)
         result = resp.json()
         LOGGER.debug("Got API response: " + str(result))
-        return SemanticShapesResponse(
+        return MultiPointResponse(
+            proportional_points=[
+                ProportionalPoint(
+                    proportion_x=point["proportionX"],
+                    proportion_y=point["proportionY"]
+                )
+                for point in result["proportionalPoints"]
+            ]
+        )
+
+    def semantic_items(self, request: SemanticShapesRequest | dict[str, Any]) -> MultiPointResponse:
+        """Get the correct place to click to answer the challenge"""
+        resp = self._make_post_request(self._SEMANTIC_ITEMS_URL, request)
+        result = resp.json()
+        LOGGER.debug("Got API response: " + str(result))
+        return MultiPointResponse(
             proportional_points=[
                 ProportionalPoint(
                     proportion_x=point["proportionX"],

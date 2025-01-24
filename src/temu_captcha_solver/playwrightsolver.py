@@ -164,19 +164,21 @@ class PlaywrightSolver(SyncSolver):
                     LOGGER.debug(f"solving shapes in in {-1 * i}")
                     time.sleep(1)
 
-                image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=SEMANTIC_SHAPES_IFRAME)
-                challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                iframe_selector = SEMANTIC_SHAPES_IFRAME if self.iframe_present() else None
+
+                image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=iframe_selector)
+                challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=iframe_selector)
                 request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
                 
                 if self.dump_requests:
                     dump_to_json(request, "semantic_shapes_request.json")
                 
                 resp = self.client.semantic_shapes(request)
-                challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=iframe_selector)
                 
                 if challenge != challenge_current:
                     LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
-                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=iframe_selector).click(force=True)
                     continue
                 
                 for point in resp.proportional_points:
@@ -184,7 +186,7 @@ class PlaywrightSolver(SyncSolver):
                         SEMANTIC_SHAPES_IMAGE,
                         point.proportion_x,
                         point.proportion_y,
-                        iframe_selector=SEMANTIC_SHAPES_IFRAME
+                        iframe_selector=iframe_selector 
                     )                
                     time.sleep(1)
                     LOGGER.debug("clicked answer...")
@@ -195,7 +197,7 @@ class PlaywrightSolver(SyncSolver):
 
                 if self.captcha_is_present(1):
                     LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
-                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=iframe_selector).click(force=True)
                     continue
                 
                 LOGGER.debug("solved semantic shapes")
@@ -205,7 +207,6 @@ class PlaywrightSolver(SyncSolver):
                 LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
                 self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
                 time.sleep(3)
-
 
     def solve_three_by_three(self) -> None:
         image_locators = self.page.locator(THREE_BY_THREE_IMAGE).all()
@@ -224,6 +225,14 @@ class PlaywrightSolver(SyncSolver):
             time.sleep(1.337)
         self._click_proportional(THREE_BY_THREE_CONFIRM_BUTTON, 0.5, 0.5)
 
+    def iframe_present(self) -> bool:
+        try:
+            expect(self.page.locator("iframe")).to_be_visible(timeout=1)
+            LOGGER.debug("iframe is present")
+            return True
+        except (TimeoutError, AssertionError) as e:
+            LOGGER.debug("iframe is not present")
+            return False
     
     def any_selector_in_list_present(self, selectors: list[str], iframe_selector: str | None = None) -> bool:
         for selector in selectors:

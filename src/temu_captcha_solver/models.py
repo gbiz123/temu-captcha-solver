@@ -33,7 +33,7 @@ class ProportionalPoint(BaseModel):
     proportion_x: float
     proportion_y: float
 
-class SemanticShapesResponse(BaseModel):
+class MultiPointResponse(BaseModel):
     """List of proportional points"""
     proportional_points: list[ProportionalPoint]
 
