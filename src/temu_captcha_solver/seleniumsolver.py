@@ -136,7 +136,7 @@ class SeleniumSolver(SyncSolver):
                     LOGGER.debug(f"solving shapes in in {-1 * i}")
                     time.sleep(1)
 
-                with self._in_iframe(SEMANTIC_SHAPES_IFRAME):
+                with self._in_iframe_if_present("iframe"):
                     image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE)
                     challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
                     request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
@@ -231,7 +231,7 @@ class SeleniumSolver(SyncSolver):
     def get_b64_img_from_src(self, element: str | WebElement, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
         if iframe_selector:
-            with self._in_iframe(iframe_selector):
+            with self._in_iframe_if_present(iframe_selector):
                 if isinstance(element, str):
                     e = self.chromedriver.find_element(By.CSS_SELECTOR, element)
                 else:
@@ -394,18 +394,23 @@ class SeleniumSolver(SyncSolver):
 
     def _get_element(self, selector: str, iframe_selector: str | None = None) -> WebElement:
         if iframe_selector:
-            with self._in_iframe(iframe_selector):
+            with self._in_iframe_if_present(iframe_selector):
                 return self.chromedriver.find_element(By.CSS_SELECTOR, selector)
         else:
             return self.chromedriver.find_element(By.CSS_SELECTOR, selector)
 
     @contextmanager
-    def _in_iframe(self, iframe_selector: str) -> Generator[Any, Any, Any]:
+    def _in_iframe_if_present(self, iframe_selector: str) -> Generator[Any, Any, Any]:
         """Context manager to  perform action in iframe"""
         try:
-            frame = self.chromedriver.find_element(By.CSS_SELECTOR, iframe_selector)
-            self.chromedriver.switch_to.frame(frame)
-            yield
+            if len(self.chromedriver.find_elements(By.CSS_SELECTOR, iframe_selector)) > 0:
+                frame = self.chromedriver.find_element(By.CSS_SELECTOR, iframe_selector)
+                self.chromedriver.switch_to.frame(frame)
+                LOGGER.debug(f"iframe {iframe_selector} detected")
+                yield
+            else:
+                LOGGER.debug(f"iframe not detected")
+                yield
         finally:
             self.chromedriver.switch_to.default_content()
 

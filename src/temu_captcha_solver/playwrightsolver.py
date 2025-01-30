@@ -159,12 +159,12 @@ class PlaywrightSolver(SyncSolver):
         Implements various checks to deal with strange behavior from temu captcha.
         For example, temu shows a loading icon which makes the challenge impossible to click."""
         for _ in range(3):
+            iframe_selector = "iframe" if self.iframe_present() else None
             try:
                 for i in range(-3, 0):
                     LOGGER.debug(f"solving shapes in in {-1 * i}")
                     time.sleep(1)
 
-                iframe_selector = SEMANTIC_SHAPES_IFRAME if self.iframe_present() else None
 
                 image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=iframe_selector)
                 challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=iframe_selector)
@@ -205,7 +205,7 @@ class PlaywrightSolver(SyncSolver):
 
             except BadRequest as e:
                 LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
-                self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=iframe_selector).click(force=True)
                 time.sleep(3)
 
     def solve_three_by_three(self) -> None:

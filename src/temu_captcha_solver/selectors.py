@@ -31,4 +31,5 @@ CAPTCHA_PRESENCE_INDICATORS = [
     "#slider",
     SEMANTIC_SHAPES_IFRAME,
     "img._1fsu8Elk",
+    "#captchaImg"
 ]

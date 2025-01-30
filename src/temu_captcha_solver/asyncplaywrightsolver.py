@@ -21,7 +21,6 @@ from .selectors import (
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
-    SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
     THREE_BY_THREE_CONFIRM_BUTTON,
@@ -167,24 +166,25 @@ class AsyncPlaywrightSolver(AsyncSolver):
         Implements various checks to deal with strange behavior from temu captcha.
         For example, temu shows a loading icon which makes the challenge impossible to click."""
         for _ in range(3):
+            iframe_selector = "iframe" if await self.iframe_present() else None
             try:
                 for i in range(-3, 0):
                     LOGGER.debug(f"solving shapes in in {-1 * i}")
                     await asyncio.sleep(1)
 
-                image_b64 = await self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=SEMANTIC_SHAPES_IFRAME)
-                challenge = await self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                image_b64 = await self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=iframe_selector)
+                challenge = await self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=iframe_selector)
                 request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
                 
                 if self.dump_requests:
                     dump_to_json(request, "semantic_shapes_request.json")
                 
                 resp = self.client.semantic_shapes(request)
-                challenge_current = await self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=SEMANTIC_SHAPES_IFRAME)
+                challenge_current = await self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=iframe_selector)
                 
                 if challenge != challenge_current:
                     LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
-                    await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=iframe_selector).click(force=True)
                     continue
 
                 for point in resp.proportional_points:
@@ -192,7 +192,7 @@ class AsyncPlaywrightSolver(AsyncSolver):
                         SEMANTIC_SHAPES_IMAGE,
                         point.proportion_x,
                         point.proportion_y,
-                        iframe_selector=SEMANTIC_SHAPES_IFRAME
+                        iframe_selector=iframe_selector 
                     )                
                     await asyncio.sleep(1)
                     LOGGER.debug("clicked answer...")
@@ -203,7 +203,7 @@ class AsyncPlaywrightSolver(AsyncSolver):
 
                 if await self.captcha_is_present(1):
                     LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
-                    await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                    await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=iframe_selector).click(force=True)
                     continue
                 
                 LOGGER.debug("solved semantic shapes")
@@ -211,7 +211,7 @@ class AsyncPlaywrightSolver(AsyncSolver):
 
             except BadRequest as e:
                 LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
-                await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=SEMANTIC_SHAPES_IFRAME).click(force=True)
+                await self._get_locator(SEMANTIC_SHAPES_REFRESH_BUTTON, iframe_selector=iframe_selector).click(force=True)
                 await asyncio.sleep(3)
 
     
@@ -387,4 +387,13 @@ class AsyncPlaywrightSolver(AsyncSolver):
             raise ValueError("element " + selector + " had no text content")
         LOGGER.debug(f"{selector} has text: {text_content}")
         return text_content
+
+    async def iframe_present(self) -> bool:
+        try:
+            await expect(self.page.locator("iframe")).to_be_visible(timeout=1)
+            LOGGER.debug("iframe is present")
+            return True
+        except (TimeoutError, AssertionError) as e:
+            LOGGER.debug("iframe is not present")
+            return False
 
