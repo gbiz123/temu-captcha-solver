@@ -132,7 +132,7 @@ try:
         new_page = popup_info.value
         ...
 except TimeoutError as e:
-    LOGGER.debug("no new tab present")
+    print("no new tab present")
 
 ```
 
