@@ -3,7 +3,7 @@ import pydantic
 import requests
 import logging
 
-from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, MultiPointResponse, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
+from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, MultiPointResponse, SwapTwoRequest, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class ApiClient:
         self._SEMANTIC_SHAPES_URL = "https://www.sadcaptcha.com/api/v1/semantic-shapes?licenseKey=" + api_key
         self._SEMANTIC_ITEMS_URL = "https://www.sadcaptcha.com/api/v1/semantic-items?licenseKey=" + api_key
         self._THREE_BY_THREE_URL = "https://www.sadcaptcha.com/api/v1/temu-three-by-three?licenseKey=" + api_key
+        self._SWAP_TWO_URL = "https://www.sadcaptcha.com/api/v1/temu-swap-two?licenseKey=" + api_key
 
     def puzzle(self, puzzle_b64: str, piece_b64: str) -> PuzzleCaptchaResponse:
         """Slide the puzzle piece"""
@@ -83,6 +84,22 @@ class ApiClient:
         LOGGER.debug("Got API response: " + str(result))
         return ThreeByThreeCaptchaResponse(solution_indices=result["solutionIndices"])
 
+    def swap_two(self, request: SwapTwoRequest | dict[str, Any]) -> MultiPointResponse:
+        """Get the two sets of coordinates on the image to click and drag to.
+        First point is the place to start the click, second point is the place to 
+        drag to and release"""
+        resp = self._make_post_request(self._SWAP_TWO_URL, request)
+        result = resp.json()
+        LOGGER.debug("Got API response: " + str(result))
+        return MultiPointResponse(
+            proportional_points=[
+                ProportionalPoint(
+                    proportion_x=point["proportionX"],
+                    proportion_y=point["proportionY"]
+                )
+                for point in result["proportionalPoints"]
+            ]
+        )
 
     def _make_post_request(self, url: str, data: pydantic.BaseModel | dict[str, Any]) -> requests.Response:
         if isinstance(data, pydantic.BaseModel):

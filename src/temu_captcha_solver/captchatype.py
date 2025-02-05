@@ -5,3 +5,4 @@ class CaptchaType(Enum):
     PUZZLE = 1
     SEMANTIC_SHAPES = 2
     THREE_BY_THREE = 3
+    SWAP_TWO = 4

@@ -42,13 +42,15 @@ from .selectors import (
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
     SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
+    SEMANTIC_SHAPES_RED_DOT,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
+    SWAP_TWO_IMAGE,
     THREE_BY_THREE_CONFIRM_BUTTON,
     THREE_BY_THREE_IMAGE,
     THREE_BY_THREE_TEXT,
 ) 
  
-from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, SemanticShapesRequest, ThreeByThreeCaptchaRequest, dump_to_json
+from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, MultiPointResponse, SemanticShapesRequest, SwapTwoRequest, ThreeByThreeCaptchaRequest, dump_to_json
 from .api import ApiClient, BadRequest
 from .syncsolver import SyncSolver
 
@@ -153,11 +155,19 @@ class SeleniumSolver(SyncSolver):
                         continue
 
                     for point in resp.proportional_points:
-                        self._click_proportional(
-                            self.chromedriver.find_element(By.CSS_SELECTOR, SEMANTIC_SHAPES_IMAGE),
-                            point.proportion_x,
-                            point.proportion_y,
-                        )                
+                        red_dot_count = self._count_red_dots()
+                        for i in range(3):
+                            self._click_proportional(
+                                self.chromedriver.find_element(By.CSS_SELECTOR, SEMANTIC_SHAPES_IMAGE),
+                                point.proportion_x + (i / 50), # each iteration try click a different place if no red dot appears
+                                point.proportion_y + (i / 50),
+                            )                
+                            if red_dot_count == self._count_red_dots():
+                                LOGGER.debug("A new red dot did not appear. trying to click again in a slightly different location")
+                                continue
+                            else:
+                                LOGGER.debug("A new red dot appeared")
+                                break
                         time.sleep(1)
                         LOGGER.debug("clicked answer...")
                     
@@ -227,6 +237,16 @@ class SeleniumSolver(SyncSolver):
             image_element.click()
             time.sleep(1.337)
         self._click_proportional(self.chromedriver.find_element(By.CSS_SELECTOR, THREE_BY_THREE_CONFIRM_BUTTON), 0.5, 0.5)
+
+    def solve_swap_two(self) -> None:
+        """Click and drag, swap two to restore the image"""
+        iframe_selector = "iframe" if self.iframe_present() else None
+        image_b64 = self.get_b64_img_from_src(SWAP_TWO_IMAGE, iframe_selector=iframe_selector)
+        request = SwapTwoRequest(image_b64=image_b64)
+        if self.dump_requests:
+            dump_to_json(request, "swap_two_request.json")
+        resp = self.client.swap_two(request)
+        self._drag_proportional(SWAP_TWO_IMAGE, resp, iframe_selector=iframe_selector)
 
     def get_b64_img_from_src(self, element: str | WebElement, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
@@ -403,7 +423,7 @@ class SeleniumSolver(SyncSolver):
     def _in_iframe_if_present(self, iframe_selector: str) -> Generator[Any, Any, Any]:
         """Context manager to  perform action in iframe"""
         try:
-            if len(self.chromedriver.find_elements(By.CSS_SELECTOR, iframe_selector)) > 0:
+            if self.iframe_present():
                 frame = self.chromedriver.find_element(By.CSS_SELECTOR, iframe_selector)
                 self.chromedriver.switch_to.frame(frame)
                 LOGGER.debug(f"iframe {iframe_selector} detected")
@@ -413,6 +433,13 @@ class SeleniumSolver(SyncSolver):
                 yield
         finally:
             self.chromedriver.switch_to.default_content()
+
+    def iframe_present(self) -> bool:
+        if len(self.chromedriver.find_elements(By.CSS_SELECTOR, "iframe")) > 0:
+            return True
+        else:
+            return False
+
 
     def _click_proportional(
             self,
@@ -440,7 +467,45 @@ class SeleniumSolver(SyncSolver):
             .pause(random.randint(1, 10) / 11)
         action.perform()
 
+    def _drag_proportional(
+            self,
+            selector: str,
+            points: MultiPointResponse
+        ) -> None:
+        """Drag from one point to another point inside an elements bounding box 
+        to the width and height of the entire element
+
+        Args:
+            points: MultiPointResponse consisting of two points, where the first point is the point the mouse
+                is initially pressed, and the second point is the point where the mouse is released.
+        """
+        if len(points.proportional_points) != 2:
+            raise ValueError(
+                    f"Expected proportional points in MultiPointResponse to have len == 2. Got len == {len(points.proportional_points)}")
+        with self._in_iframe_if_present("iframe"):
+            bounding_box = self._get_element_bounding_box(selector)
+            start_x = bounding_box["x"] + (points.proportional_points[0].proportion_x * bounding_box["width"]) 
+            start_y = bounding_box["y"] + (points.proportional_points[0].proportion_x * bounding_box["height"]) 
+            end_x = bounding_box["x"] + (points.proportional_points[1].proportion_x * bounding_box["width"]) 
+            end_y = bounding_box["y"] + (points.proportional_points[1].proportion_x * bounding_box["height"]) 
+            action = ActionBuilder(self.chromedriver)
+            action.pointer_action \
+                    .move_to_location(start_x, start_y) \
+                    .pointer_down() \
+                    .pause(0.3) \
+                    .move_to_location(end_x, end_y) \
+                    .pointer_up() \
+                    .perform()
+            LOGGER.debug(f"dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+
     def _get_element_bounding_box(self, e: WebElement) -> FloatRect:
         loc = e.location
         size = e.size
         return {"x": loc["x"], "y": loc["y"], "width": size["width"], "height": size["height"]}
+
+    def _count_red_dots(self) -> int:
+        """Cound the red dots that appear when solving a shapes captcha"""
+        dots = self.chromedriver.find_elements(By.CSS_SELECTOR, SEMANTIC_SHAPES_RED_DOT)
+        count = len(dots)
+        LOGGER.debug(f"{count} red dots are present")
+        return count

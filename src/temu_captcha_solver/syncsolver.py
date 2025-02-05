@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from playwright.sync_api import Locator
 
 from temu_captcha_solver.captchatype import CaptchaType
-from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
+from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, SWAP_TWO_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +38,8 @@ class SyncSolver(ABC):
                         self.solve_semantic_shapes()
                     case CaptchaType.THREE_BY_THREE:
                         self.solve_three_by_three()
+                    case CaptchaType.SWAP_TWO:
+                        self.solve_swap_two()
             if self.captcha_is_not_present(timeout=5):
                 return
             else:
@@ -45,18 +47,27 @@ class SyncSolver(ABC):
 
     def identify_captcha(self) -> CaptchaType:
         for _ in range(30):
-            if self.any_selector_in_list_present(PUZZLE_UNIQUE_IDENTIFIERS):
+            iframe_selector = "iframe" if self.iframe_present() else None
+            if self.any_selector_in_list_present(PUZZLE_UNIQUE_IDENTIFIERS,
+                                                 iframe_locator=iframe_selector):
                 LOGGER.debug("detected puzzle")
                 return CaptchaType.PUZZLE
-            elif self.any_selector_in_list_present(ARCED_SLIDE_UNIQUE_IDENTIFIERS):
+            elif self.any_selector_in_list_present(ARCED_SLIDE_UNIQUE_IDENTIFIERS,
+                                                   iframe_locator=iframe_selector):
                 LOGGER.debug("detected arced slide")
                 return CaptchaType.ARCED_SLIDE
-            elif self.any_selector_in_list_present(SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS):
+            elif self.any_selector_in_list_present(SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS,
+                                                   iframe_locator=iframe_selector):
                 LOGGER.debug("detected semantic shapes")
                 return CaptchaType.SEMANTIC_SHAPES
-            elif self.any_selector_in_list_present(THREE_BY_THREE_UNIQUE_IDENTIFIERS):
+            elif self.any_selector_in_list_present(THREE_BY_THREE_UNIQUE_IDENTIFIERS,
+                                                   iframe_locator=iframe_selector):
                 LOGGER.debug("detected three by three")
                 return CaptchaType.THREE_BY_THREE
+            elif self.any_selector_in_list_present(SWAP_TWO_UNIQUE_IDENTIFIERS,
+                                                   iframe_locator=iframe_selector):
+                LOGGER.debug("detected swap two")
+                return CaptchaType.SWAP_TWO
             else:
                 time.sleep(1)
         raise ValueError("Neither puzzle, arced slide, or semantic shapes was present")
@@ -86,6 +97,10 @@ class SyncSolver(ABC):
         pass
 
     @abstractmethod
+    def solve_swap_two(self) -> None:
+        pass
+
+    @abstractmethod
     def solve_three_by_three(self) -> None:
         pass
 
@@ -95,5 +110,9 @@ class SyncSolver(ABC):
 
     @abstractmethod
     def any_selector_in_list_present(self, selectors: list[str], iframe_locator: str | None = None) -> bool:
+        pass
+
+    @abstractmethod
+    def iframe_present(self) -> bool:
         pass
 

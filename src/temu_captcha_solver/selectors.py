@@ -9,17 +9,22 @@ PUZZLE_PUZZLE_IMAGE_SELECTOR = "#slider > img"
 PUZZLE_PIECE_IMAGE_SELECTOR = "#img-button > img"
 PUZZLE_UNIQUE_IDENTIFIERS = ["#Slider"]
 
+SEMANTIC_SHAPES_RED_DOT = "div[class^=red-point]"
 SEMANTIC_SHAPES_IFRAME = "iframe"
 SEMANTIC_SHAPES_CHALLENGE_ROOT_ELE = "#Picture"
 SEMANTIC_SHAPES_CHALLENGE_TEXT = "div[class^='picture-text'], div._2Alt0zsN"
 SEMANTIC_SHAPES_IMAGE = "#captchaImg"
 SEMANTIC_SHAPES_REFRESH_BUTTON = ".refresh-27d6x, .ZVIQM964"
-SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_IFRAME, ".iframe-3eaNR", ".iframe-8Vtge", "#captchaImg"]
+SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS = [SEMANTIC_SHAPES_CHALLENGE_TEXT]
 
 THREE_BY_THREE_IMAGE = "img.loaded"
 THREE_BY_THREE_TEXT = ".verifyDialog div[role=dialog]"
 THREE_BY_THREE_CONFIRM_BUTTON = ".verifyDialog div[role=button]:has(span)"
 THREE_BY_THREE_UNIQUE_IDENTIFIERS = ["#imageSemantics img.loaded"]
+
+SWAP_TWO_IMAGE = "img[class^=pizzle-box]"
+SWAP_TWO_REFRESH_BUTTON = "svg[class^=refreshSvg]"
+SWAP_TWO_UNIQUE_IDENTIFIERS = [SWAP_TWO_IMAGE]
 
 # Occassionally Temu shows a familiar challenge but it's in an iframe
 # Need a way to account for occasions when other challenges are nested in iframe
@@ -29,7 +34,8 @@ CAPTCHA_PRESENCE_INDICATORS = [
     "#slide-button",
     "#Slider",
     "#slider",
-    SEMANTIC_SHAPES_IFRAME,
     "img._1fsu8Elk",
-    "#captchaImg"
+    "#captchaImg",
+    ".iframe-8Vtge",
+    ".iframe-3eaNR",
 ]

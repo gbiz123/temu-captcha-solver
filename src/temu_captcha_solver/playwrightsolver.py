@@ -1,11 +1,15 @@
 """This class handles the captcha solving for playwright users"""
 
+import asyncio
+from difflib import restore
 import logging
 import math
+from optparse import Values
 import random
 from typing import Any
 from playwright.sync_api import FloatRect, Locator, Page, expect
 from playwright.sync_api import TimeoutError
+from playwright._impl._errors import TargetClosedError
 import time
 
 from temu_captcha_solver.parsers import get_list_of_objects_of_interest
@@ -25,7 +29,9 @@ from .selectors import (
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
     SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
+    SEMANTIC_SHAPES_RED_DOT,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
+    SWAP_TWO_IMAGE,
     THREE_BY_THREE_CONFIRM_BUTTON,
     THREE_BY_THREE_IMAGE,
     THREE_BY_THREE_TEXT,
@@ -42,7 +48,9 @@ from .geometry import (
 from .models import (
     ArcedSlideCaptchaRequest,
     ArcedSlideTrajectoryElement,
+    MultiPointResponse,
     SemanticShapesRequest,
+    SwapTwoRequest,
     ThreeByThreeCaptchaRequest,
     dump_to_json
 ) 
@@ -165,7 +173,6 @@ class PlaywrightSolver(SyncSolver):
                     LOGGER.debug(f"solving shapes in in {-1 * i}")
                     time.sleep(1)
 
-
                 image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE, iframe_selector=iframe_selector)
                 challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT, iframe_selector=iframe_selector)
                 request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
@@ -182,12 +189,21 @@ class PlaywrightSolver(SyncSolver):
                     continue
                 
                 for point in resp.proportional_points:
-                    self._click_proportional(
-                        SEMANTIC_SHAPES_IMAGE,
-                        point.proportion_x,
-                        point.proportion_y,
-                        iframe_selector=iframe_selector 
-                    )                
+                    red_dot_count = self._count_red_dots(iframe_selector=iframe_selector)
+                    for i in range(3):
+                        self._click_proportional(
+                            SEMANTIC_SHAPES_IMAGE,
+                            point.proportion_x + (i / 50), # each iteration try click a different place if no red dot appears
+                            point.proportion_y + (i / 50),
+                            iframe_selector=iframe_selector
+                        )                
+                        if red_dot_count == self._count_red_dots(iframe_selector=iframe_selector):
+                            LOGGER.debug("A new red dot did not appear. trying to click again in a slightly different location")
+                            continue
+                        else:
+                            LOGGER.debug("A new red dot appeared")
+                            break
+
                     time.sleep(1)
                     LOGGER.debug("clicked answer...")
                 
@@ -225,6 +241,17 @@ class PlaywrightSolver(SyncSolver):
             time.sleep(1.337)
         self._click_proportional(THREE_BY_THREE_CONFIRM_BUTTON, 0.5, 0.5)
 
+    def solve_swap_two(self) -> None:
+        """Click and drag, swap two to restore the image"""
+        iframe_selector = "iframe" if self.iframe_present() else None
+        image_b64 = self.get_b64_img_from_src(SWAP_TWO_IMAGE, iframe_selector=iframe_selector)
+        request = SwapTwoRequest(image_b64=image_b64)
+        if self.dump_requests:
+            dump_to_json(request, "swap_two_request.json")
+        resp = self.client.swap_two(request)
+        self._drag_proportional(SWAP_TWO_IMAGE, resp, iframe_selector=iframe_selector)
+        
+
     def iframe_present(self) -> bool:
         try:
             expect(self.page.locator("iframe")).to_be_visible(timeout=1)
@@ -234,9 +261,9 @@ class PlaywrightSolver(SyncSolver):
             LOGGER.debug("iframe is not present")
             return False
     
-    def any_selector_in_list_present(self, selectors: list[str], iframe_selector: str | None = None) -> bool:
+    def any_selector_in_list_present(self, selectors: list[str], iframe_locator: str | None = None) -> bool:
         for selector in selectors:
-            e = self._get_locator(selector, iframe_selector=iframe_selector)
+            e = self._get_locator(selector, iframe_selector=iframe_locator)
             for ele in e.all():
                 if ele.is_visible():
                     LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
@@ -247,10 +274,17 @@ class PlaywrightSolver(SyncSolver):
     def switch_to_new_tab_if_present(self) -> None:
         try:
             with self.page.expect_popup(timeout=1000) as popup_info:
-                self.page = popup_info.value
-                LOGGER.debug("popup present, changing page to popup")
+                try:
+                    new_page = popup_info.value
+                    _ = new_page.locator("html").count()
+                    self.page = new_page
+                    LOGGER.debug("popup present, changing page to popup")
+                except TargetClosedError as e:
+                    LOGGER.debug("tried to switch to an already closed popup")
         except TimeoutError as e:
             LOGGER.debug("no popup present")
+        except Exception as e:
+            LOGGER.debug("detected a popup, but could not switch to it")
 
     
     def _gather_arced_slide_request_data(self, slide_button_center_x: float, slide_button_center_y: float) -> ArcedSlideCaptchaRequest:
@@ -323,7 +357,7 @@ class PlaywrightSolver(SyncSolver):
         to the width and height of the entire element
 
         Args:
-            element: FloatRect to click inside
+            selector: selector for the element to click inside
             proportion_x: float from 0 to 1 defining the proportion x location to click 
             proportion_y: float from 0 to 1 defining the proportion y location to click 
         """
@@ -332,6 +366,33 @@ class PlaywrightSolver(SyncSolver):
         y_offset = (proportion_y * bounding_box["height"]) 
         self._get_locator(selector, iframe_selector=iframe_selector).click(position={"x": x_offset, "y": y_offset}, force=True)
         LOGGER.debug(f"clicked {selector} at offset {x_offset}, {y_offset}")
+
+    def _drag_proportional(
+            self,
+            selector: str,
+            points: MultiPointResponse,
+            iframe_selector: str | None = None
+        ) -> None:
+        """Drag from one point to another point inside an elements bounding box 
+        to the width and height of the entire element
+
+        Args:
+            points: MultiPointResponse consisting of two points, where the first point is the point the mouse
+                is initially pressed, and the second point is the point where the mouse is released.
+        """
+        if len(points.proportional_points) != 2:
+            raise ValueError(
+                    f"Expected proportional points in MultiPointResponse to have len == 2. Got len == {len(points.proportional_points)}")
+        bounding_box = self._get_element_bounding_box(selector, iframe_selector=iframe_selector)
+        start_x = bounding_box["x"] + (points.proportional_points[0].proportion_x * bounding_box["width"]) 
+        start_y = bounding_box["y"] + (points.proportional_points[0].proportion_x * bounding_box["height"]) 
+        end_x = bounding_box["x"] + (points.proportional_points[1].proportion_x * bounding_box["width"]) 
+        end_y = bounding_box["y"] + (points.proportional_points[1].proportion_x * bounding_box["height"]) 
+        self.page.mouse.move(start_x, start_y)
+        self.page.mouse.down()
+        self.page.mouse.move(end_x, end_y, steps=100)
+        self.page.mouse.up()
+        LOGGER.debug(f"dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
 
     def _drag_mouse_horizontal_with_overshoot(self, x_distance: int, start_x_coord: float, start_y_coord: float) -> None:
         self.page.mouse.move(start_x_coord + x_distance, start_y_coord, steps=100)
@@ -433,4 +494,11 @@ class PlaywrightSolver(SyncSolver):
         if box:
             return int(box["width"])
         raise AttributeError(".captcha_verify_slide--slidebar was found but had no bouding box")
+
+    def _count_red_dots(self, iframe_selector: str | None = None) -> int:
+        """Cound the red dots that appear when solving a shapes captcha"""
+        loc = self._get_locator(SEMANTIC_SHAPES_RED_DOT, iframe_selector=iframe_selector)
+        count = loc.count()
+        LOGGER.debug(f"{count} red dots are present")
+        return count
 

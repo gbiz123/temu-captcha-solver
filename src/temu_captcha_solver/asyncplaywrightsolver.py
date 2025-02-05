@@ -22,7 +22,9 @@ from .selectors import (
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
     SEMANTIC_SHAPES_IMAGE,
+    SEMANTIC_SHAPES_RED_DOT,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
+    SWAP_TWO_IMAGE,
     THREE_BY_THREE_CONFIRM_BUTTON,
     THREE_BY_THREE_IMAGE,
     THREE_BY_THREE_TEXT,
@@ -39,7 +41,9 @@ from .geometry import (
 from .models import (
     ArcedSlideCaptchaRequest,
     ArcedSlideTrajectoryElement,
+    MultiPointResponse,
     SemanticShapesRequest,
+    SwapTwoRequest,
     ThreeByThreeCaptchaRequest,
     dump_to_json
 ) 
@@ -97,7 +101,8 @@ class AsyncPlaywrightSolver(AsyncSolver):
     async def solve_puzzle(self, retries: int = 3) -> None:
         """Temu puzzle is special because the pieces shift when pressing the slider button.
         Therefore we must send the pictures after pressing the button. """
-        button_bbox = await self._get_element_bounding_box(PUZZLE_BUTTON_SELECTOR)
+        iframe_selector = "iframe" if await self.iframe_present() else None
+        button_bbox = await self._get_element_bounding_box(PUZZLE_BUTTON_SELECTOR, iframe_selector=iframe_selector)
         start_x, start_y = get_box_center(button_bbox)
         await self.page.mouse.move(start_x, start_y)
         await self.page.mouse.down()
@@ -106,10 +111,10 @@ class AsyncPlaywrightSolver(AsyncSolver):
             await self.page.mouse.move(start_x + start_distance, start_y + math.log(1 + pixel))
             await asyncio.sleep(0.05)
         LOGGER.debug("dragged 10 pixels")
-        puzzle_image = await self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
-        piece_image = await self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
+        puzzle_image = await self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR, iframe_selector=iframe_selector)
+        piece_image = await self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR, iframe_selector=iframe_selector)
         resp = self.client.puzzle(puzzle_image, piece_image)
-        slide_bar_width = await self._get_puzzle_slide_bar_width()
+        slide_bar_width = await self._get_puzzle_slide_bar_width(iframe_selector=iframe_selector)
         pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
         LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
         for pixel in range(start_distance, pixel_distance):
@@ -159,7 +164,16 @@ class AsyncPlaywrightSolver(AsyncSolver):
             await image_locator.click()
             await asyncio.sleep(1.337)
         await self._click_proportional(THREE_BY_THREE_CONFIRM_BUTTON, 0.5, 0.5)
-    
+
+    async def solve_swap_two(self) -> None:
+        """Click and drag, swap two to restore the image"""
+        iframe_selector = "iframe" if await self.iframe_present() else None
+        image_b64 = self.get_b64_img_from_src(SWAP_TWO_IMAGE, iframe_selector=iframe_selector)
+        request = SwapTwoRequest(image_b64=image_b64)
+        if self.dump_requests:
+            dump_to_json(request, "swap_two_request.json")
+        resp = self.client.swap_two(request)
+        await self._drag_proportional(SWAP_TWO_IMAGE, resp, iframe_selector=iframe_selector)
 
     async def solve_semantic_shapes(self) -> None:
         """Solves the shapes challenge where an image and some text are presented.
@@ -188,12 +202,20 @@ class AsyncPlaywrightSolver(AsyncSolver):
                     continue
 
                 for point in resp.proportional_points:
-                    await self._click_proportional(
-                        SEMANTIC_SHAPES_IMAGE,
-                        point.proportion_x,
-                        point.proportion_y,
-                        iframe_selector=iframe_selector 
-                    )                
+                    red_dot_count = await self._count_red_dots(iframe_selector=iframe_selector)
+                    for i in range(3):
+                        await self._click_proportional(
+                            SEMANTIC_SHAPES_IMAGE,
+                            point.proportion_x,
+                            point.proportion_y,
+                            iframe_selector=iframe_selector 
+                        )                
+                        if red_dot_count == await self._count_red_dots(iframe_selector=iframe_selector):
+                            LOGGER.debug("A new red dot did not appear. trying to click again in a slightly different location")
+                            continue
+                        else:
+                            LOGGER.debug("A new red dot appeared")
+                            break
                     await asyncio.sleep(1)
                     LOGGER.debug("clicked answer...")
                 
@@ -215,9 +237,10 @@ class AsyncPlaywrightSolver(AsyncSolver):
                 await asyncio.sleep(3)
 
     
-    async def any_selector_in_list_present(self, selectors: list[str]) -> bool:
+    async def any_selector_in_list_present(self, selectors: list[str], iframe_locator: str | None = None) -> bool:
         for selector in selectors:
-            for ele in await self.page.locator(selector).all():
+            e = self._get_locator(selector, iframe_selector=iframe_locator)
+            for ele in await e.all():
                 if await ele.is_visible():
                     LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
                     return True
@@ -265,21 +288,24 @@ class AsyncPlaywrightSolver(AsyncSolver):
                 break
         return trajectory
 
-    async def _get_puzzle_slide_bar_width(self) -> float:
+    async def _get_puzzle_slide_bar_width(self, iframe_selector: str | None = None) -> float:
         """Gets the width of the puzzle slide bar from the width of the image. 
         The slide bar is always the same as the image. 
         We do not get the width of the bar element itself, because the css selector varies from region to region."""
-        bg_image_bounding_box = await self._get_element_bounding_box(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+        bg_image_bounding_box = await self._get_element_bounding_box(PUZZLE_PUZZLE_IMAGE_SELECTOR,
+                                                                     iframe_selector=iframe_selector)
         slide_bar_width = bg_image_bounding_box["width"]
         return slide_bar_width
 
-    async def _get_arced_slide_bar_width(self) -> float:
+    async def _get_arced_slide_bar_width(self, iframe_selector: str | None = None) -> float:
         """Gets the width of the arced slide bar from the width of the image. 
         The slide bar is always the same as the image. 
         We do not get the width of the bar element itself, because the css selector varies from region to region."""
-        bg_image_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR)
+        bg_image_bounding_box = await self._get_element_bounding_box(ARCED_SLIDE_PUZZLE_IMAGE_SELECTOR,
+                                                                     iframe_selector=iframe_selector)
         slide_bar_width = bg_image_bounding_box["width"]
         return slide_bar_width
+
     async def _click_proportional(
             self,
             selector: str,
@@ -388,6 +414,33 @@ class AsyncPlaywrightSolver(AsyncSolver):
         LOGGER.debug(f"{selector} has text: {text_content}")
         return text_content
 
+    async def _drag_proportional(
+            self,
+            selector: str,
+            points: MultiPointResponse,
+            iframe_selector: str | None = None
+        ) -> None:
+        """Drag from one point to another point inside an elements bounding box 
+        to the width and height of the entire element
+
+        Args:
+            points: MultiPointResponse consisting of two points, where the first point is the point the mouse
+                is initially pressed, and the second point is the point where the mouse is released.
+        """
+        if len(points.proportional_points) != 2:
+            raise ValueError(
+                    f"Expected proportional points in MultiPointResponse to have len == 2. Got len == {len(points.proportional_points)}")
+        bounding_box = await self._get_element_bounding_box(selector, iframe_selector=iframe_selector)
+        start_x = bounding_box["x"] + (points.proportional_points[0].proportion_x * bounding_box["width"]) 
+        start_y = bounding_box["y"] + (points.proportional_points[0].proportion_x * bounding_box["height"]) 
+        end_x = bounding_box["x"] + (points.proportional_points[1].proportion_x * bounding_box["width"]) 
+        end_y = bounding_box["y"] + (points.proportional_points[1].proportion_x * bounding_box["height"]) 
+        await self.page.mouse.move(start_x, start_y)
+        await self.page.mouse.down()
+        await self.page.mouse.move(end_x, end_y, steps=100)
+        await self.page.mouse.up()
+        LOGGER.debug(f"dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+
     async def iframe_present(self) -> bool:
         try:
             await expect(self.page.locator("iframe")).to_be_visible(timeout=1)
@@ -397,3 +450,9 @@ class AsyncPlaywrightSolver(AsyncSolver):
             LOGGER.debug("iframe is not present")
             return False
 
+    async def _count_red_dots(self, iframe_selector: str | None = None) -> int:
+        """Cound the red dots that appear when solving a shapes captcha"""
+        loc = self._get_locator(SEMANTIC_SHAPES_RED_DOT, iframe_selector=iframe_selector)
+        count = await loc.count()
+        LOGGER.debug(f"{count} red dots are present")
+        return count
