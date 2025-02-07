@@ -115,6 +115,27 @@ asyncio.run(main())
 It is crucial that users of the Playwright client also use `playwright-stealth` with the stealth configuration specified above.
 Failure to use the `playwright-stealth` plugin will result in "Verification failed" when attempting to solve the captcha.
 
+## Handling new tabs
+Temu likes to open links in new tabs.
+Since Playwright and Selenium don't automatically switch to new tabs, the solver will not work on new tabs.
+When a new tab is created, you must switch to it manually with your driver.
+Here's how to do it in playwright and selenium:
+```py
+# Switching tabs with Selenium:
+new_window = driver.window_handles[-1]
+driver.switch_to.window(new_window)
+...
+
+# Switching tabs with Playwright
+try:
+    with page.expect_popup(timeout=1000) as popup_info:
+        new_page = popup_info.value
+        ...
+except TimeoutError as e:
+    print("no new tab present")
+
+```
+
 ## Using Proxies and Custom Headers
 SadCaptcha supports using proxies and custom headers such as user agent.
 This is useful to avoid detection.
