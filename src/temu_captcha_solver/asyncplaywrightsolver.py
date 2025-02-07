@@ -168,7 +168,7 @@ class AsyncPlaywrightSolver(AsyncSolver):
     async def solve_swap_two(self) -> None:
         """Click and drag, swap two to restore the image"""
         iframe_selector = "iframe" if await self.iframe_present() else None
-        image_b64 = self.get_b64_img_from_src(SWAP_TWO_IMAGE, iframe_selector=iframe_selector)
+        image_b64 = await self.get_b64_img_from_src(SWAP_TWO_IMAGE, iframe_selector=iframe_selector)
         request = SwapTwoRequest(image_b64=image_b64)
         if self.dump_requests:
             dump_to_json(request, "swap_two_request.json")

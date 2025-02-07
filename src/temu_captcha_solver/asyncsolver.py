@@ -4,12 +4,12 @@ import logging
 import asyncio
 from abc import ABC, abstractmethod
 
-from playwright.async_api import Locator, Page, TimeoutError
+from playwright.async_api import Locator, Page, TimeoutError, TargetClosedError
 from playwright._impl._errors import TargetClosedError
 
 
 from temu_captcha_solver.captchatype import CaptchaType
-from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
+from temu_captcha_solver.selectors import ARCED_SLIDE_UNIQUE_IDENTIFIERS, PUZZLE_UNIQUE_IDENTIFIERS, SEMANTIC_SHAPES_UNIQUE_IDENTIFIERS, SWAP_TWO_UNIQUE_IDENTIFIERS, THREE_BY_THREE_UNIQUE_IDENTIFIERS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +41,10 @@ class AsyncSolver(ABC):
                         await self.solve_semantic_shapes()
                     case CaptchaType.THREE_BY_THREE:
                         await self.solve_three_by_three()
+                    case CaptchaType.SWAP_TWO:
+                        await self.solve_swap_two()
+                    case CaptchaType.NONE:
+                        LOGGER.warning("captcha was present (i think), but could not identify")
             if await self.captcha_is_not_present(timeout=5):
                 return
             else:
@@ -80,9 +84,13 @@ class AsyncSolver(ABC):
                                                          iframe_locator=iframe_selector):
                 LOGGER.debug("detected three by three")
                 return CaptchaType.THREE_BY_THREE
+            elif await self.any_selector_in_list_present(SWAP_TWO_UNIQUE_IDENTIFIERS,
+                                                         iframe_locator=iframe_selector):
+                LOGGER.debug("detected three by three")
+                return CaptchaType.THREE_BY_THREE
             else:
                 await asyncio.sleep(1)
-        raise ValueError("Neither puzzle, or arced slide was present")
+        return CaptchaType.NONE
 
     @abstractmethod
     async def captcha_is_present(self, timeout: int = 15) -> bool:
@@ -106,6 +114,10 @@ class AsyncSolver(ABC):
 
     @abstractmethod
     async def solve_three_by_three(self) -> None:
+        pass
+
+    @abstractmethod
+    async def solve_swap_two(self) -> None:
         pass
 
     @abstractmethod

@@ -40,13 +40,15 @@ class SyncSolver(ABC):
                         self.solve_three_by_three()
                     case CaptchaType.SWAP_TWO:
                         self.solve_swap_two()
+                    case CaptchaType.NONE:
+                        LOGGER.warning("captcha was present (i think), but could not identify")
             if self.captcha_is_not_present(timeout=5):
                 return
             else:
                 continue
 
     def identify_captcha(self) -> CaptchaType:
-        for _ in range(30):
+        for _ in range(50):
             iframe_selector = "iframe" if self.iframe_present() else None
             if self.any_selector_in_list_present(PUZZLE_UNIQUE_IDENTIFIERS,
                                                  iframe_locator=iframe_selector):
@@ -69,8 +71,8 @@ class SyncSolver(ABC):
                 LOGGER.debug("detected swap two")
                 return CaptchaType.SWAP_TWO
             else:
-                time.sleep(1)
-        raise ValueError("Neither puzzle, arced slide, or semantic shapes was present")
+                time.sleep(0.2)
+        return CaptchaType.NONE
 
     @abstractmethod
     def switch_to_new_tab_if_present(self) -> None:

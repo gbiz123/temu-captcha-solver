@@ -22,7 +22,7 @@ from ..playwrightsolver import PlaywrightSolver
 
 
 proxy = {
-        "server": "45.67.3.160:6323",
+        "server": "45.67.3.53:6216",
 }
 
 # def test_solve_captcha_on_temu_open_no_stealth(caplog):
@@ -85,12 +85,12 @@ def test_solve_captcha_on_temu_open(caplog):
         browser = p.chromium.launch(
                 headless=False,
                 proxy=proxy,
-                args=[
-                    "--disable-dev-shm-usage", 
-                     "--disable-blink-features=AutomationControlled",
-                ]
+                # args=[
+                #     "--disable-dev-shm-usage", 
+                #      "--disable-blink-features=AutomationControlled",
+                # ]
         )
-        context = browser.new_context(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36")
+        context = browser.new_context()
         page = context.new_page()
         config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
         # stealth_sync(page, config)

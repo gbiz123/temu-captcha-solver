@@ -38,4 +38,5 @@ CAPTCHA_PRESENCE_INDICATORS = [
     "#captchaImg",
     ".iframe-8Vtge",
     ".iframe-3eaNR",
+    "iframe"
 ]
