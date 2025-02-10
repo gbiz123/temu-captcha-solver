@@ -4,7 +4,7 @@ The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
 The end goal of this tool is to solve every single Temu captcha. 
-Currently we are able to solve the arced slide, puzzle slide, shapes, and three-by-three challenge:
+Currently we are able to solve the arced slide, puzzle slide, shapes, items, three-by-three, and swap two challenge:
 
 <div align="center">
     <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="175px" height="150px" alt="temu slide Captcha Solver">
@@ -12,6 +12,7 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, and three-
     <img src="https://sadcaptcha.b-cdn.net/temu-shapes.webp" width="175px" height="150px" alt="Temu shapes Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-items.png" width="175px" height="150px" alt="Temu items Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-three-by-three-captcha.webp" width="175px" height="150px" alt="Temu 3x3 Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/14.png" width="175px" height="150px" alt="Temu swap two Captcha Solver">
 </div>
 
 - **Arced Slide** challenge is the one where there is a puzzle piece that travels in an unpredictable trajectory, and there are two possible locations where the solution may be.
@@ -19,6 +20,7 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, and three-
 - **Shapes (English only)** challenge shows a picture of various objects and has an associated text challenge.
 - **Items (English only)** challenge shows a picture of various objects and has an associated text challenge.
 - **Three-by-three** challenge shows a 3x3 grid of images, and asks you to select images according to a text challenge.
+- **Swap Two** has two tiles in the wrong order, and asks you to swap two to fix the image. **(BETA)**
     
 ## Requirements
 - Python >= 3.10
