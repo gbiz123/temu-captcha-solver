@@ -4,7 +4,7 @@ import logging
 import asyncio
 from abc import ABC, abstractmethod
 
-from playwright.async_api import Locator, Page, TimeoutError, TargetClosedError
+from playwright.async_api import Locator, Page, TimeoutError
 from playwright._impl._errors import TargetClosedError
 
 
