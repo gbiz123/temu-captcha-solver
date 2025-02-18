@@ -22,7 +22,7 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, items, thr
 - **Items (English only)** challenge shows a picture of various objects and has an associated text challenge.
 - **Three-by-three** challenge shows a 3x3 grid of images, and asks you to select images according to a text challenge.
 - **Swap Two** has two tiles in the wrong order, and asks you to swap two to fix the image.
-  **Cats and Cars (English only)** is an adorable challenge but it will wreck your bot. 
+- **Cats and Cars (English only)** is an adorable challenge but it will wreck your bot. 
     
 ## Requirements
 - Python >= 3.10
