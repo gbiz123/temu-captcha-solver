@@ -13,6 +13,9 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, items, thr
     <img src="https://sadcaptcha.b-cdn.net/temu-items.png" width="175px" height="150px" alt="Temu items Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/temu-three-by-three-captcha.webp" width="175px" height="150px" alt="Temu 3x3 Captcha Solver">
     <img src="https://sadcaptcha.b-cdn.net/14.png" width="175px" height="150px" alt="Temu swap two Captcha Solver">
+    <img src="https://sadcaptcha.b-cdn.net/Untitled.png" width="175px" height="150px" alt="Temu cats and cars captcha solver">
+    <img src="https://sadcaptcha.b-cdn.net/temu-two-image.webp" width="175px" height="150px" alt="Temu two image captcha solver">
+    
 </div>
 
 - **Arced Slide** challenge is the one where there is a puzzle piece that travels in an unpredictable trajectory, and there are two possible locations where the solution may be.
@@ -20,7 +23,9 @@ Currently we are able to solve the arced slide, puzzle slide, shapes, items, thr
 - **Shapes (English only)** challenge shows a picture of various objects and has an associated text challenge.
 - **Items (English only)** challenge shows a picture of various objects and has an associated text challenge.
 - **Three-by-three** challenge shows a 3x3 grid of images, and asks you to select images according to a text challenge.
-- **Swap Two** has two tiles in the wrong order, and asks you to swap two to fix the image. **(BETA)**
+- **Swap Two** has two tiles in the wrong order, and asks you to swap two to fix the image.
+- **Cats and Cars (English only)** is an adorable challenge but it will wreck your bot.
+- **Two image (English only)** is a notorious challenge which presents a text challenge and two side-by-side images.
     
 ## Requirements
 - Python >= 3.10
