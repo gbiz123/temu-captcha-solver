@@ -11,7 +11,7 @@ from ..seleniumsolver import SeleniumSolver
 
 def make_driver() -> uc.Chrome:
     options = uc.ChromeOptions()
-    options.add_argument("--proxy-server=31.57.87.18:5703")
+    options.add_argument("--proxy-server=45.67.2.115:5689")
     return uc.Chrome(service=ChromeDriverManager().install(),
                      headless=False,
                      use_subprocess=False,

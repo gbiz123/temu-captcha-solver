@@ -136,43 +136,43 @@ class SeleniumSolver(SyncSolver):
         """Solves the shapes challenge where an image and some text are presented.
         Implements various checks to deal with strange behavior from temu captcha.
         For example, temu shows a loading icon which makes the challenge impossible to click."""
-        for _ in range(3):
-            with self._in_iframe_if_present("iframe"):
+        with self._in_iframe_if_present("iframe"):
+            for _ in range(3):
                 try:
                     for i in range(-3, 0):
                         LOGGER.debug(f"solving shapes in in {-1 * i}")
                         time.sleep(1)
 
-                    image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE)
-                    challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
-                    request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
-                    
-                    if self.dump_requests:
-                        dump_to_json(request, "semantic_shapes_request.json")
-                    
-                    resp = self.client.semantic_shapes(request)
-                    challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
-                    
-                    if challenge != challenge_current:
-                        LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
-                        self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
-                        continue
+                        image_b64 = self.get_b64_img_from_src(SEMANTIC_SHAPES_IMAGE)
+                        challenge = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
+                        request = SemanticShapesRequest(image_b64=image_b64, challenge=challenge)
+                        
+                        if self.dump_requests:
+                            dump_to_json(request, "semantic_shapes_request.json")
+                        
+                        resp = self.client.semantic_shapes(request)
+                        challenge_current = self._get_element_text(SEMANTIC_SHAPES_CHALLENGE_TEXT)
+                        
+                        if challenge != challenge_current:
+                            LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
+                            self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
+                            continue
 
-                    self._click_proportional_points(SEMANTIC_SHAPES_IMAGE, resp.proportional_points)
-                    time.sleep(1)
-                    LOGGER.debug("clicked answer...")
-                    
-                    for i in range(-5, 0):
-                        LOGGER.debug(f"validating answer in {-1 * i}")
+                        self._click_proportional_points(SEMANTIC_SHAPES_IMAGE, resp.proportional_points)
                         time.sleep(1)
+                        LOGGER.debug("clicked answer...")
+                        
+                        for i in range(-5, 0):
+                            LOGGER.debug(f"validating answer in {-1 * i}")
+                            time.sleep(1)
 
-                    if self.captcha_is_present(1):
-                        LOGGER.debug("captcha was still present after solving. retrying")
-                        self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
-                        continue
-                    
-                    LOGGER.debug("solved semantic shapes")
-                    return
+                        if self.captcha_is_present(1):
+                            LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
+                            self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
+                            continue
+                        
+                        LOGGER.debug("solved semantic shapes")
+                        return
 
                 except BadRequest as e:
                     LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
@@ -346,10 +346,7 @@ class SeleniumSolver(SyncSolver):
 
     
     def any_selector_in_list_present(self, selectors: list[str], iframe_locator: str | None = None) -> bool:
-        with self._in_iframe_if_present(
-            iframe_selector=iframe_locator if iframe_locator else "iframe",
-            remain_in_frame=True
-        ):
+        with self._in_iframe_if_present(iframe_selector=iframe_locator if iframe_locator else "iframe"):
             for selector in selectors:
                 for ele in self.chromedriver.find_elements(By.CSS_SELECTOR, selector):
                     if ele.is_displayed():
@@ -456,9 +453,9 @@ class SeleniumSolver(SyncSolver):
             piece_center=piece_center
         )
         
-    def _get_element_text(self, selector: str) -> str:
+    def _get_element_text(self, selector: str, iframe_selector: str | None = None) -> str:
         """Get the text of an element"""
-        e = self._get_element(selector)
+        e = self._get_element(selector, iframe_selector=iframe_selector)
         text_content = e.text
         if not text_content:
             raise ValueError("element " + selector + " had no text content")
@@ -472,10 +469,8 @@ class SeleniumSolver(SyncSolver):
             return self.chromedriver.find_element(By.CSS_SELECTOR, selector)
 
     @contextmanager
-    def _in_iframe_if_present(self, iframe_selector: str, remain_in_frame: bool = False) -> Generator[Any, Any, Any]:
-        """Context manager to  perform action in iframe
-
-        if remain_in_frame is true, it will not switch back to default context"""
+    def _in_iframe_if_present(self, iframe_selector: str) -> Generator[Any, Any, Any]:
+        """Context manager to  perform action in iframe"""
         try:
             if self.iframe_present():
                 frame = self.chromedriver.find_element(By.CSS_SELECTOR, iframe_selector)
@@ -486,8 +481,7 @@ class SeleniumSolver(SyncSolver):
                 LOGGER.debug(f"iframe not detected")
                 yield
         finally:
-            if not remain_in_frame:
-                self.chromedriver.switch_to.default_content()
+            self.chromedriver.switch_to.default_content()
 
     def iframe_present(self) -> bool:
         if len(self.chromedriver.find_elements(By.CSS_SELECTOR, "iframe")) > 0:

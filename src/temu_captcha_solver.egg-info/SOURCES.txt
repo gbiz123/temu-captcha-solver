@@ -21,9 +21,13 @@ src/temu_captcha_solver.egg-info/SOURCES.txt
 src/temu_captcha_solver.egg-info/dependency_links.txt
 src/temu_captcha_solver.egg-info/requires.txt
 src/temu_captcha_solver.egg-info/top_level.txt
+src/temu_captcha_solver/solver_commons/__init__.py
+src/temu_captcha_solver/solver_commons/exceptions.py
+src/temu_captcha_solver/solver_commons/two_image.py
 src/temu_captcha_solver/tests/__init__.py
 src/temu_captcha_solver/tests/test_api.py
 src/temu_captcha_solver/tests/test_asyncplaywrightsolver.py
 src/temu_captcha_solver/tests/test_downloader.py
 src/temu_captcha_solver/tests/test_playwrightsolver.py
 src/temu_captcha_solver/tests/test_seleniumsolver.py
+src/temu_captcha_solver/tests/test_solver_commons.py
