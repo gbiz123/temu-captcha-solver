@@ -26,6 +26,13 @@ SWAP_TWO_IMAGE = "img[class^=pizzle-box]"
 SWAP_TWO_REFRESH_BUTTON = "svg[class^=refreshSvg]"
 SWAP_TWO_UNIQUE_IDENTIFIERS = [SWAP_TWO_IMAGE]
 
+TWO_IMAGE_FIRST_IMAGE = "div[class^=picWrap] div[class^=firstPic] #captchaImg"
+TWO_IMAGE_SECOND_IMAGE = "div[class^=picWrap] div:not([class^=firstPic]) div:not([class^=firstPic]) #captchaImg"
+TWO_IMAGE_CHALLENGE_TEXT = "div[class^=subTitle]"
+TWO_IMAGE_CONFIRM_BUTTON = "div[class^=btnWrap] div[role=button]"
+TWO_IMAGE_REFRESH_BUTTON = "svg[class^=refreshIcon]"
+TWO_IMAGE_UNIQUE_IDENTIFIERS = [TWO_IMAGE_FIRST_IMAGE, TWO_IMAGE_SECOND_IMAGE]
+
 # Occassionally Temu shows a familiar challenge but it's in an iframe
 # Need a way to account for occasions when other challenges are nested in iframe
 

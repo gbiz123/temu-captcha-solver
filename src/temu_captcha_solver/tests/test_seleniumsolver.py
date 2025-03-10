@@ -21,8 +21,8 @@ def make_driver() -> uc.Chrome:
 def make_driver_no_stealth() -> webdriver.Chrome:
     options = webdriver.ChromeOptions()
     options.binary_location = "/usr/bin/google-chrome-stable"
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-blink-features=AutomationControlled")
+    # options.add_argument("--disable-dev-shm-usage")
+    # options.add_argument("--disable-blink-features=AutomationControlled")
     driver = webdriver.Chrome(service=webdriver.ChromeService(ChromeDriverManager().install()), options=options)
     return driver
 
@@ -40,7 +40,7 @@ def make_driver_no_stealth() -> webdriver.Chrome:
 
 def test_solve_captcha_at_temu_open(caplog):
     caplog.set_level(logging.DEBUG)
-    driver = make_driver()
+    driver = make_driver_no_stealth()
     try:
         driver.get("https://www.temu.com")
         input()

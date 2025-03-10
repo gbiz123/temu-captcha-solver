@@ -34,3 +34,8 @@ def test_three_by_three():
         res = api_client.three_by_three(data)
         assert isinstance(res, ThreeByThreeCaptchaResponse)
 
+def test_two_image():
+    with open("src/temu_captcha_solver/tests/two-image-request.json", "rb") as file:
+        data = json.load(file)
+        res = api_client.two_image(data)
+        assert isinstance(res, MultiPointResponse)

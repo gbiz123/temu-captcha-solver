@@ -40,6 +40,8 @@ class SyncSolver(ABC):
                         self.solve_three_by_three()
                     case CaptchaType.SWAP_TWO:
                         self.solve_swap_two()
+                    case CaptchaType.TWO_IMAGE:
+                        self.solve_two_image()
                     case CaptchaType.NONE:
                         LOGGER.warning("captcha was present (i think), but could not identify")
             if self.captcha_is_not_present(timeout=5):
@@ -100,6 +102,10 @@ class SyncSolver(ABC):
 
     @abstractmethod
     def solve_swap_two(self) -> None:
+        pass
+
+    @abstractmethod
+    def solve_two_image(self) -> None:
         pass
 
     @abstractmethod

@@ -81,3 +81,8 @@ class ThreeByThreeCaptchaResponse(BaseModel):
         3 4 5
         6 7 8"""
     solution_indices: list[int]
+
+class TwoImageCaptchaRequest(BaseModel):
+    """Contains text challenge and first and second images"""
+    challenge: str
+    images_b64: list[str]

@@ -250,6 +250,9 @@ class PlaywrightSolver(SyncSolver):
             dump_to_json(request, "swap_two_request.json")
         resp = self.client.swap_two(request)
         self._drag_proportional(SWAP_TWO_IMAGE, resp, iframe_selector=iframe_selector)
+
+    def solve_two_image(self) -> None:
+        return super().solve_two_image()
         
 
     def iframe_present(self) -> bool:

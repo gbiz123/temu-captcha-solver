@@ -3,7 +3,7 @@ import pydantic
 import requests
 import logging
 
-from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, MultiPointResponse, SwapTwoRequest, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse
+from .models import ArcedSlideCaptchaRequest, ArcedSlideCaptchaResponse, ProportionalPoint, PuzzleCaptchaResponse, SemanticShapesRequest, MultiPointResponse, SwapTwoRequest, ThreeByThreeCaptchaRequest, ThreeByThreeCaptchaResponse, TwoImageCaptchaRequest
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ class ApiClient:
         self._SEMANTIC_ITEMS_URL = "https://www.sadcaptcha.com/api/v1/semantic-items?licenseKey=" + api_key
         self._THREE_BY_THREE_URL = "https://www.sadcaptcha.com/api/v1/temu-three-by-three?licenseKey=" + api_key
         self._SWAP_TWO_URL = "https://www.sadcaptcha.com/api/v1/temu-swap-two?licenseKey=" + api_key
+        self._TWO_IMAGE_URL = "https://www.sadcaptcha.com/api/v1/temu-two-image?licenseKey=" + api_key
 
     def puzzle(self, puzzle_b64: str, piece_b64: str) -> PuzzleCaptchaResponse:
         """Slide the puzzle piece"""
@@ -101,6 +102,21 @@ class ApiClient:
             ]
         )
 
+    def two_image(self, request: TwoImageCaptchaRequest | dict[str, Any]) -> MultiPointResponse:
+        """Get the correct place to click to answer the challenge"""
+        resp = self._make_post_request(self._TWO_IMAGE_URL, request)
+        result = resp.json()
+        LOGGER.debug("Got API response: " + str(result))
+        return MultiPointResponse(
+            proportional_points=[
+                ProportionalPoint(
+                    proportion_x=point["proportionX"],
+                    proportion_y=point["proportionY"]
+                )
+                for point in result["proportionalPoints"]
+            ]
+        )
+
     def _make_post_request(self, url: str, data: pydantic.BaseModel | dict[str, Any]) -> requests.Response:
         if isinstance(data, pydantic.BaseModel):
             resp = requests.post(url, json=data.model_dump())
@@ -110,4 +126,9 @@ class ApiClient:
             raise BadRequest(f"status code {resp.status_code}. bad request or could not find answer")     
         if resp.status_code == 401:
             raise ApiException(f"status code {resp.status_code}. either bad API key or out of credits")     
+        if resp.status_code == 502:
+            raise ApiException("The SadCaptcha server is currently under maintenance, and will be back within 5 minutes.")
+        if resp.status_code not in (200, 201):
+            raise ApiException(f"status code {resp.status_code}. Probably a server issue. Please set log level to DEBUG and send the output to the SadCaptcha team to investigate")     
+        LOGGER.debug(f"made successful request on {url}")
         return resp

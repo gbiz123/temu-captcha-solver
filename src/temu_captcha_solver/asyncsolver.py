@@ -43,6 +43,8 @@ class AsyncSolver(ABC):
                         await self.solve_three_by_three()
                     case CaptchaType.SWAP_TWO:
                         await self.solve_swap_two()
+                    case CaptchaType.TWO_IMAGE:
+                        await self.solve_two_image()
                     case CaptchaType.NONE:
                         LOGGER.warning("captcha was present (i think), but could not identify")
             if await self.captcha_is_not_present(timeout=5):
@@ -86,7 +88,7 @@ class AsyncSolver(ABC):
                 return CaptchaType.THREE_BY_THREE
             elif await self.any_selector_in_list_present(SWAP_TWO_UNIQUE_IDENTIFIERS,
                                                          iframe_locator=iframe_selector):
-                LOGGER.debug("detected three by three")
+                LOGGER.debug("detected swap two")
                 return CaptchaType.THREE_BY_THREE
             else:
                 await asyncio.sleep(1)
@@ -106,6 +108,10 @@ class AsyncSolver(ABC):
 
     @abstractmethod
     async def solve_puzzle(self) -> None:
+        pass
+
+    @abstractmethod
+    async def solve_two_image(self) -> None:
         pass
 
     @abstractmethod

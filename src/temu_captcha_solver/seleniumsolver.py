@@ -4,10 +4,9 @@ from contextlib import contextmanager
 import logging
 import math
 import random
-from select import select
 import time
-from typing import Any, Callable, Generator
-from playwright.sync_api import FloatRect, Locator
+from typing import Any, Generator
+from playwright.sync_api import FloatRect
 
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains, Chrome
@@ -21,6 +20,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from temu_captcha_solver.parsers import get_list_of_objects_of_interest
 from temu_captcha_solver.selenium_util import wait_for_element_to_be_stable
+from temu_captcha_solver.solver_commons.two_image import identify_selector_of_image_to_click, two_image_challenge_is_supported
 
 from .geometry import(
     get_box_center,
@@ -40,7 +40,6 @@ from .selectors import (
     PUZZLE_PIECE_IMAGE_SELECTOR,
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
-    SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
     SEMANTIC_SHAPES_RED_DOT,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
@@ -48,9 +47,13 @@ from .selectors import (
     THREE_BY_THREE_CONFIRM_BUTTON,
     THREE_BY_THREE_IMAGE,
     THREE_BY_THREE_TEXT,
+    TWO_IMAGE_CHALLENGE_TEXT,
+    TWO_IMAGE_FIRST_IMAGE,
+    TWO_IMAGE_REFRESH_BUTTON,
+    TWO_IMAGE_SECOND_IMAGE,
 ) 
  
-from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, MultiPointResponse, SemanticShapesRequest, SwapTwoRequest, ThreeByThreeCaptchaRequest, dump_to_json
+from .models import ArcedSlideCaptchaRequest, ArcedSlideTrajectoryElement, MultiPointResponse, ProportionalPoint, SemanticShapesRequest, SwapTwoRequest, ThreeByThreeCaptchaRequest, TwoImageCaptchaRequest, dump_to_json
 from .api import ApiClient, BadRequest
 from .syncsolver import SyncSolver
 
@@ -99,34 +102,35 @@ class SeleniumSolver(SyncSolver):
 
     def solve_puzzle(self) -> None:
         """Slide 10 pixels, then grab the puzzle and piece, then make API call and consume the response"""
-        slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR)
-        slide_button_box = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR))
-        start_x, start_y = get_box_center(slide_button_box)
-        input = PointerInput(POINTER_MOUSE, "default mouse")
-        actions = ActionBuilder(self.chromedriver, duration=5, mouse=input)
-        _ = actions.pointer_action \
-                .move_to_location(start_x, start_y) \
-                .pointer_down()
-        start_distance = 10
-        for pixel in range(start_distance):
-            _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
-                    .pause(0.02)
-        actions.perform()
-        LOGGER.debug("dragged 10 pixels")
-        puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
-        piece_image = self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
-        resp = self.client.puzzle(puzzle_image, piece_image)
-        slide_bar_width = self._get_puzzle_slide_bar_width()
-        pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
-        LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
-        actions = ActionBuilder(self.chromedriver, duration=1, mouse=input)
-        for pixel in range(start_distance, pixel_distance):
-            _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
-                    .pause(0.01)
-        actions.pointer_action.pause(0.5)
-        _ = actions.pointer_action.pointer_up()
-        actions.perform()
-        LOGGER.debug("done")
+        with self._in_iframe_if_present("iframe"):
+            slide_button = self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR)
+            slide_button_box = self._get_element_bounding_box(self.chromedriver.find_element(By.CSS_SELECTOR, PUZZLE_BUTTON_SELECTOR))
+            start_x, start_y = get_box_center(slide_button_box)
+            input = PointerInput(POINTER_MOUSE, "default mouse")
+            actions = ActionBuilder(self.chromedriver, duration=5, mouse=input)
+            _ = actions.pointer_action \
+                    .move_to_location(start_x, start_y) \
+                    .pointer_down()
+            start_distance = 10
+            for pixel in range(start_distance):
+                _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
+                        .pause(0.02)
+            actions.perform()
+            LOGGER.debug("dragged 10 pixels")
+            puzzle_image = self.get_b64_img_from_src(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+            piece_image = self.get_b64_img_from_src(PUZZLE_PIECE_IMAGE_SELECTOR)
+            resp = self.client.puzzle(puzzle_image, piece_image)
+            slide_bar_width = self._get_puzzle_slide_bar_width()
+            pixel_distance = int(resp.slide_x_proportion * slide_bar_width)
+            LOGGER.debug(f"will continue to drag {pixel_distance} more pixels")
+            actions = ActionBuilder(self.chromedriver, duration=1, mouse=input)
+            for pixel in range(start_distance, pixel_distance):
+                _ = actions.pointer_action.move_to_location(int(start_x + pixel), int(start_y + math.log(1 + pixel))) \
+                        .pause(0.01)
+            actions.pointer_action.pause(0.5)
+            _ = actions.pointer_action.pointer_up()
+            actions.perform()
+            LOGGER.debug("done")
 
     def solve_semantic_shapes(self) -> None:
         """Solves the shapes challenge where an image and some text are presented.
@@ -154,22 +158,9 @@ class SeleniumSolver(SyncSolver):
                         self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
                         continue
 
-                    for point in resp.proportional_points:
-                        red_dot_count = self._count_red_dots()
-                        for i in range(3):
-                            self._click_proportional(
-                                self.chromedriver.find_element(By.CSS_SELECTOR, SEMANTIC_SHAPES_IMAGE),
-                                point.proportion_x + (i / 50), # each iteration try click a different place if no red dot appears
-                                point.proportion_y + (i / 50),
-                            )                
-                            if red_dot_count == self._count_red_dots():
-                                LOGGER.debug("A new red dot did not appear. trying to click again in a slightly different location")
-                                continue
-                            else:
-                                LOGGER.debug("A new red dot appeared")
-                                break
-                        time.sleep(1)
-                        LOGGER.debug("clicked answer...")
+                    self._click_proportional_points(SEMANTIC_SHAPES_IMAGE, resp.proportional_points)
+                    time.sleep(1)
+                    LOGGER.debug("clicked answer...")
                     
                     for i in range(-5, 0):
                         LOGGER.debug(f"validating answer in {-1 * i}")
@@ -187,7 +178,7 @@ class SeleniumSolver(SyncSolver):
                 LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
                 self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
                 time.sleep(3)
-    
+
     def solve_arced_slide(self) -> None:
         """Solves the arced slide puzzle. This challenge is similar to the puzzle
         challenge, but the puzzle piece travels in an arc, hence then name arced slide.
@@ -198,55 +189,113 @@ class SeleniumSolver(SyncSolver):
         bar to determine the piece's trajectory. Then it sends the data to the API
         and consumes the response.
         """ 
-        slide_button_element = self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_BUTTON_SELECTOR)
-        slide_button_bbox = self._get_element_bounding_box(slide_button_element)
-        start_x = slide_button_bbox["x"] + (slide_button_bbox["width"] / 2)
-        actions = ActionChains(self.chromedriver, duration=0)
+        with self._in_iframe_if_present("iframe"):
+            slide_button_element = self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_BUTTON_SELECTOR)
+            slide_button_bbox = self._get_element_bounding_box(slide_button_element)
+            start_x = slide_button_bbox["x"] + (slide_button_bbox["width"] / 2)
+            actions = ActionChains(self.chromedriver, duration=0)
 
-        # Forward pass
-        _ = actions.click_and_hold(self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_BUTTON_SELECTOR))
-        request = self._gather_arced_slide_request_data(actions)
-        solution = self.client.arced_slide(request)
-        LOGGER.debug("Arced slide solution: " + str(solution.pixels_from_slider_origin))
+            # Forward pass
+            _ = actions.click_and_hold(self.chromedriver.find_element(By.CSS_SELECTOR, ARCED_SLIDE_BUTTON_SELECTOR))
+            request = self._gather_arced_slide_request_data(actions)
+            solution = self.client.arced_slide(request)
+            LOGGER.debug("Arced slide solution: " + str(solution.pixels_from_slider_origin))
 
-        # Backward pass
-        slide_button_bbox = self._get_element_bounding_box(slide_button_element)
-        end_x = slide_button_bbox["x"] + (slide_button_bbox["width"] / 2)
-        solution_distance_backwards = int(end_x - start_x - solution.pixels_from_slider_origin)
-        LOGGER.debug(f"Moving mouse backwards by {solution_distance_backwards} pixels")
-        actions.move_to_element(slide_button_element).perform() # Return mouse to button
-        for _ in range(solution_distance_backwards):
-            _ = actions \
-                    .move_by_offset(-1, int(random.gauss(0, 5))) \
-                    .pause(0.01)
-        actions.release().perform()
+            # Backward pass
+            slide_button_bbox = self._get_element_bounding_box(slide_button_element)
+            end_x = slide_button_bbox["x"] + (slide_button_bbox["width"] / 2)
+            solution_distance_backwards = int(end_x - start_x - solution.pixels_from_slider_origin)
+            LOGGER.debug(f"Moving mouse backwards by {solution_distance_backwards} pixels")
+            actions.move_to_element(slide_button_element).perform() # Return mouse to button
+            for _ in range(solution_distance_backwards):
+                _ = actions \
+                        .move_by_offset(-1, int(random.gauss(0, 5))) \
+                        .pause(0.01)
+            actions.release().perform()
 
     def solve_three_by_three(self) -> None:
-        image_elements = self.chromedriver.find_elements(By.CSS_SELECTOR, THREE_BY_THREE_IMAGE)
-        images_b64: list[str] = []
-        for image_element in image_elements:
-            images_b64.append(self.get_b64_img_from_src(image_element))
-        challenge_text = self._get_element_text(THREE_BY_THREE_TEXT)
-        objects = get_list_of_objects_of_interest(challenge_text)
-        request = ThreeByThreeCaptchaRequest(objects_of_interest=objects, images=images_b64)
-        if self.dump_requests:
-            dump_to_json(request, "three_by_three_request.json")
-        resp = self.client.three_by_three(request)
-        for i in resp.solution_indices:
-            image_element = self.chromedriver.find_element(By.CSS_SELECTOR, f"img[src*=\"{images_b64[i]}\"]") # Where src matches the desired image
-            image_element.click()
-            time.sleep(1.337)
-        self._click_proportional(self.chromedriver.find_element(By.CSS_SELECTOR, THREE_BY_THREE_CONFIRM_BUTTON), 0.5, 0.5)
+        with self._in_iframe_if_present("iframe"):
+            image_elements = self.chromedriver.find_elements(By.CSS_SELECTOR, THREE_BY_THREE_IMAGE)
+            images_b64: list[str] = []
+            for image_element in image_elements:
+                images_b64.append(self.get_b64_img_from_src(image_element))
+            challenge_text = self._get_element_text(THREE_BY_THREE_TEXT)
+            objects = get_list_of_objects_of_interest(challenge_text)
+            request = ThreeByThreeCaptchaRequest(objects_of_interest=objects, images=images_b64)
+            if self.dump_requests:
+                dump_to_json(request, "three_by_three_request.json")
+            resp = self.client.three_by_three(request)
+            for i in resp.solution_indices:
+                image_element = self.chromedriver.find_element(By.CSS_SELECTOR, f"img[src*=\"{images_b64[i]}\"]") # Where src matches the desired image
+                image_element.click()
+                time.sleep(1.337)
+            self._click_proportional(self.chromedriver.find_element(By.CSS_SELECTOR, THREE_BY_THREE_CONFIRM_BUTTON), 0.5, 0.5)
 
     def solve_swap_two(self) -> None:
         """Click and drag, swap two to restore the image"""
-        iframe_selector = "iframe" if self.iframe_present() else None
-        image_b64 = self.get_b64_img_from_src(SWAP_TWO_IMAGE, iframe_selector=iframe_selector)
-        request = SwapTwoRequest(image_b64=image_b64)
-        if self.dump_requests:
-            dump_to_json(request, "swap_two_request.json")
-        resp = self.client.swap_two(request)
-        self._drag_proportional(SWAP_TWO_IMAGE, resp, iframe_selector=iframe_selector)
+        with self._in_iframe_if_present("iframe"):
+            image_b64 = self.get_b64_img_from_src(SWAP_TWO_IMAGE)
+            request = SwapTwoRequest(image_b64=image_b64)
+            if self.dump_requests:
+                dump_to_json(request, "swap_two_request.json")
+            resp = self.client.swap_two(request)
+            self._drag_proportional(SWAP_TWO_IMAGE, resp)
+
+    def solve_two_image(self) -> None:
+        ""
+        for _ in range(3):
+            try:
+                for i in range(-3, 0):
+                    LOGGER.debug(f"solving two image in in {-1 * i}")
+                    time.sleep(1)
+
+                with self._in_iframe_if_present("iframe"):
+                    challenge = self._get_element_text(TWO_IMAGE_CHALLENGE_TEXT)
+
+                    if not two_image_challenge_is_supported(challenge):
+                        LOGGER.warning("This text variation of Two Image is not supported yet. Refreshing until we see one that is supported. Please be aware that English Only is supported!!!")
+                        self._get_element(TWO_IMAGE_REFRESH_BUTTON).click()
+                        continue
+
+                    first_image = self.get_b64_img_from_src(TWO_IMAGE_FIRST_IMAGE)
+                    second_image = self.get_b64_img_from_src(TWO_IMAGE_SECOND_IMAGE)
+                    request = TwoImageCaptchaRequest(
+                        images_b64=[first_image, second_image],
+                        challenge=challenge
+                    )
+                    
+                    if self.dump_requests:
+                        dump_to_json(request, "two_image_request.json")
+                    
+                    resp = self.client.two_image(request)
+                    challenge_current = self._get_element_text(TWO_IMAGE_CHALLENGE_TEXT)
+                    
+                    if challenge != challenge_current:
+                        LOGGER.debug("challenge text has changed since making the initial request. refreshing to avoid clicking incorrect location")
+                        self._get_element(TWO_IMAGE_REFRESH_BUTTON).click()
+                        continue
+
+                    target_image_selector = identify_selector_of_image_to_click(challenge)
+                    self._click_proportional_points(target_image_selector, resp.proportional_points)
+                    time.sleep(1)
+                    LOGGER.debug("clicked answer...")
+                    
+                    for i in range(-5, 0):
+                        LOGGER.debug(f"validating answer in {-1 * i}")
+                        time.sleep(1)
+
+                    if self.captcha_is_present(1):
+                        LOGGER.debug("captcha was still present after solving. This is normally because it's impossible to click in the region over the solution, and the click was not registered")
+                        self._get_element(TWO_IMAGE_REFRESH_BUTTON).click()
+                        continue
+                    
+                    LOGGER.debug("solved two image")
+                    return
+
+            except BadRequest as e:
+                LOGGER.debug("API was unable to solve, retrying. error message: " + str(e))
+                self._get_element(SEMANTIC_SHAPES_REFRESH_BUTTON).click()
+                time.sleep(3)
 
     def get_b64_img_from_src(self, element: str | WebElement, iframe_selector: str | None = None) -> str:
         """Get the source of b64 image element and return the portion after the data:image/png;base64,"""
@@ -298,13 +347,14 @@ class SeleniumSolver(SyncSolver):
 
     
     def any_selector_in_list_present(self, selectors: list[str], iframe_locator: str | None = None) -> bool:
-        for selector in selectors:
-            for ele in self.chromedriver.find_elements(By.CSS_SELECTOR, selector):
-                if ele.is_displayed():
-                    LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
-                    return True
-        LOGGER.debug("No selector in list found: " + ", ".join(selectors))
-        return False
+        with self._in_iframe_if_present(iframe_selector=iframe_locator if iframe_locator else "iframe"):
+            for selector in selectors:
+                for ele in self.chromedriver.find_elements(By.CSS_SELECTOR, selector):
+                    if ele.is_displayed():
+                        LOGGER.debug("Detected selector: " + selector + " from list " + ", ".join(selectors))
+                        return True
+            LOGGER.debug("No selector in list found: " + ", ".join(selectors))
+            return False
 
     def _gather_arced_slide_request_data(self, actions: ActionChains) -> ArcedSlideCaptchaRequest:
         """Get the images and trajectory for arced slide request"""
@@ -440,7 +490,6 @@ class SeleniumSolver(SyncSolver):
         else:
             return False
 
-
     def _click_proportional(
             self,
             element: WebElement,
@@ -466,6 +515,23 @@ class SeleniumSolver(SyncSolver):
             .click() \
             .pause(random.randint(1, 10) / 11)
         action.perform()
+
+    def _click_proportional_points(self, selector: str, points: list[ProportionalPoint]) -> None:
+        for point in points:
+            red_dot_count = self._count_red_dots()
+            for i in range(5):
+                self._click_proportional(
+                    self.chromedriver.find_element(By.CSS_SELECTOR, selector),
+                    point.proportion_x + (i / 50), # each iteration try click a different place if no red dot appears
+                    point.proportion_y + (i / 50),
+                )                
+                if red_dot_count == self._count_red_dots():
+                    LOGGER.debug("A new red dot did not appear. trying to click again in a slightly different location")
+                    time.sleep(0.5)
+                    continue
+                else:
+                    LOGGER.debug("A new red dot appeared")
+                    break
 
     def _drag_proportional(
             self,

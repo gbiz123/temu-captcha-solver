@@ -6,4 +6,5 @@ class CaptchaType(Enum):
     SEMANTIC_SHAPES = 2
     THREE_BY_THREE = 3
     SWAP_TWO = 4
-    NONE = 5
+    TWO_IMAGE = 5
+    NONE = 6
