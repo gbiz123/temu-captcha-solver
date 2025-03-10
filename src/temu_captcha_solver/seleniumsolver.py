@@ -487,7 +487,10 @@ class SeleniumSolver(SyncSolver):
                 yield
         finally:
             if not remain_in_frame:
+                LOGGER.debug("Leaving iframe!")
                 self.chromedriver.switch_to.default_content()
+            else:
+                LOGGER.debug("Staying in iframe!")
 
     def iframe_present(self) -> bool:
         if len(self.chromedriver.find_elements(By.CSS_SELECTOR, "iframe")) > 0:
