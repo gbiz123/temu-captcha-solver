@@ -87,7 +87,7 @@ def test_solve_captcha_on_temu_open(caplog):
         }
         browser = p.chromium.launch(
                 headless=False,
-                # proxy=proxy,
+                proxy=proxy,
                 # args=[
                 #     "--disable-dev-shm-usage", 
                 #      "--disable-blink-features=AutomationControlled",

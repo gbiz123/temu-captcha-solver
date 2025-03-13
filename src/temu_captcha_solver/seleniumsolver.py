@@ -41,7 +41,7 @@ from .selectors import (
     PUZZLE_PUZZLE_IMAGE_SELECTOR,
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
     SEMANTIC_SHAPES_IMAGE,
-    SEMANTIC_SHAPES_RED_DOT,
+    SEMANTIC_SHAPES_ELEMENTS_INSIDE_CHALLENGE,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
     SWAP_TWO_IMAGE,
     THREE_BY_THREE_CONFIRM_BUTTON,
@@ -526,14 +526,14 @@ class SeleniumSolver(SyncSolver):
 
     def _click_proportional_points(self, selector: str, points: list[ProportionalPoint]) -> None:
         for point in points:
-            red_dot_count = self._count_red_dots()
+            red_dot_count = self._count_eles_inside_challenge()
             for i in range(5):
                 self._click_proportional(
                     self.chromedriver.find_element(By.CSS_SELECTOR, selector),
                     point.proportion_x + (i / 50), # each iteration try click a different place if no red dot appears
                     point.proportion_y + (i / 50),
                 )                
-                if red_dot_count == self._count_red_dots():
+                if red_dot_count == self._count_eles_inside_challenge():
                     LOGGER.debug("A new red dot did not appear. trying to click again in a slightly different location")
                     time.sleep(0.5)
                     continue
@@ -577,9 +577,9 @@ class SeleniumSolver(SyncSolver):
         size = e.size
         return {"x": loc["x"], "y": loc["y"], "width": size["width"], "height": size["height"]}
 
-    def _count_red_dots(self) -> int:
+    def _count_eles_inside_challenge(self) -> int:
         """Cound the red dots that appear when solving a shapes captcha"""
-        dots = self.chromedriver.find_elements(By.CSS_SELECTOR, SEMANTIC_SHAPES_RED_DOT)
+        dots = self.chromedriver.find_elements(By.CSS_SELECTOR, SEMANTIC_SHAPES_ELEMENTS_INSIDE_CHALLENGE)
         count = len(dots)
         LOGGER.debug(f"{count} red dots are present")
         return count

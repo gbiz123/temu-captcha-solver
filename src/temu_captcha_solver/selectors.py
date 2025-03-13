@@ -9,7 +9,8 @@ PUZZLE_PUZZLE_IMAGE_SELECTOR = "#slider > img"
 PUZZLE_PIECE_IMAGE_SELECTOR = "#img-button > img"
 PUZZLE_UNIQUE_IDENTIFIERS = ["#Slider"]
 
-SEMANTIC_SHAPES_RED_DOT = "div[class^=red-point]"
+# SEMANTIC_SHAPES_RED_DOT = "div[class^=red-point]"
+SEMANTIC_SHAPES_ELEMENTS_INSIDE_CHALLENGE = "#Picture *"
 SEMANTIC_SHAPES_IFRAME = "iframe"
 SEMANTIC_SHAPES_CHALLENGE_ROOT_ELE = "#Picture"
 SEMANTIC_SHAPES_CHALLENGE_TEXT = "div[class^='picture-text'], div._2Alt0zsN"

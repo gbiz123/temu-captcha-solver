@@ -39,3 +39,9 @@ def test_two_image():
         data = json.load(file)
         res = api_client.two_image(data)
         assert isinstance(res, MultiPointResponse)
+
+def test_cats_and_cars():
+    with open("src/temu_captcha_solver/tests/temu-cats-and-cars.json", "rb") as file:
+        data = json.load(file)
+        res = api_client.semantic_shapes(data)
+        assert isinstance(res, MultiPointResponse)

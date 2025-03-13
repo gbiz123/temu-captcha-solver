@@ -29,7 +29,7 @@ from .selectors import (
     SEMANTIC_SHAPES_CHALLENGE_TEXT,
     SEMANTIC_SHAPES_IFRAME,
     SEMANTIC_SHAPES_IMAGE,
-    SEMANTIC_SHAPES_RED_DOT,
+    SEMANTIC_SHAPES_ELEMENTS_INSIDE_CHALLENGE,
     SEMANTIC_SHAPES_REFRESH_BUTTON,
     SWAP_TWO_IMAGE,
     THREE_BY_THREE_CONFIRM_BUTTON,
@@ -500,7 +500,7 @@ class PlaywrightSolver(SyncSolver):
 
     def _count_red_dots(self, iframe_selector: str | None = None) -> int:
         """Cound the red dots that appear when solving a shapes captcha"""
-        loc = self._get_locator(SEMANTIC_SHAPES_RED_DOT, iframe_selector=iframe_selector)
+        loc = self._get_locator(SEMANTIC_SHAPES_ELEMENTS_INSIDE_CHALLENGE, iframe_selector=iframe_selector)
         count = loc.count()
         LOGGER.debug(f"{count} red dots are present")
         return count

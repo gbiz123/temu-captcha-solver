@@ -40,7 +40,7 @@ def make_driver_no_stealth() -> webdriver.Chrome:
 
 def test_solve_captcha_at_temu_open(caplog):
     caplog.set_level(logging.DEBUG)
-    driver = make_driver_no_stealth()
+    driver = make_driver()
     try:
         driver.get("https://www.temu.com")
         input()
