@@ -4,6 +4,7 @@ import logging
 import math
 import random
 from typing import Any
+import warnings
 from playwright.async_api import FloatRect, Locator, Page, expect
 from playwright.async_api import TimeoutError
 import asyncio
@@ -68,6 +69,8 @@ class AsyncPlaywrightSolver(AsyncSolver):
             dump_requests: bool = False,
             mouse_step_size: int = 5
         ) -> None:
+        warnings.warn(
+            "AsyncPlaywrightSolver is deprecated. Please use 'make_async_playwright_solver_context()' instead for a more reliable experience.")
         self.page = page
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers

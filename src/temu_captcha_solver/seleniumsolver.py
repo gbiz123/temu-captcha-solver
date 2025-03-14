@@ -6,6 +6,7 @@ import math
 import random
 import time
 from typing import Any, Generator
+import warnings
 from playwright.sync_api import FloatRect
 
 from selenium.common.exceptions import TimeoutException
@@ -73,6 +74,8 @@ class SeleniumSolver(SyncSolver):
             dump_requests: bool = False,
             mouse_step_size: int = 5
         ) -> None:
+        warnings.warn(
+            "SeleniumSolver is deprecated. Please use 'make_undetected_chromedriver_solver()' instead for a more reliable experience.")
         self.chromedriver = chromedriver
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers

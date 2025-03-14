@@ -7,6 +7,7 @@ import math
 from optparse import Values
 import random
 from typing import Any
+import warnings
 from playwright.sync_api import FloatRect, Locator, Page, expect
 from playwright.sync_api import TimeoutError
 from playwright._impl._errors import TargetClosedError
@@ -78,6 +79,8 @@ class PlaywrightSolver(SyncSolver):
             dump_requests: bool = False,
             mouse_step_size: int = 5
         ) -> None:
+        warnings.warn(
+            "PlaywrightSolver is deprecated. Please use 'make_playwright_solver_context()' instead for a more reliable experience.")
         self.page = page
         self.client = ApiClient(sadcaptcha_api_key)
         self.headers = headers
