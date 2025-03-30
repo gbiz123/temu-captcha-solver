@@ -1,6 +1,6 @@
 Metadata-Version: 2.2
 Name: temu-captcha-solver
-Version: 0.5.4
+Version: 0.6.0
 Summary: This package integrates with Selenium or Playwright to solve any Temu captcha in one line of code.
 Author-email: Toughdata LLC <greg@toughdata.net>
 Project-URL: Homepage, https://www.sadcaptcha.com
@@ -31,7 +31,7 @@ The purpose is to make integrating SadCaptcha into your Selenium, Playwright, or
 Instructions for integrating with Selenium, Playwright, and Async Playwright are described below in their respective sections.
 
 The end goal of this tool is to solve every single Temu captcha. 
-Currently we are able to solve the arced slide, puzzle slide, shapes, items, three-by-three, and swap two challenge:
+Currently we are able to solve the arced slide, puzzle slide, shapes, items, three-by-three, two image, and swap two challenges:
 
 <div align="center">
     <img src="https://sadcaptcha.b-cdn.net/arced-slide-temu-captcha.png" width="175px" height="150px" alt="temu slide Captcha Solver">
@@ -69,138 +69,65 @@ pip install temu-captcha-solver
 ```
 
 ## Selenium Client 
-Import the package, set up the `SeleniumSolver` class, and call it whenever you need.
-This turns the entire captcha detection, solution, retry, and verification process into a single line of code.
-It is the recommended method if you are using Playwright.
+Import the function `make_undetected_chromedriver_solver`
+This function will create an undetected chromedriver instance patched with the temu Captcha Solver chrome extension.
+The extension will automatically detect and solve the captcha in the background, and there is nothing further you need to do.
 
 ```py
-from temu_captcha_solver import SeleniumSolver
+from temu_captcha_solver import make_undetected_chromedriver_solver
 from selenium_stealth import stealth
 import undetected_chromedriver as uc
 
-driver = uc.Chrome(headless=False) # Use default undetected_chromedriver configuration!
 api_key = "YOUR_API_KEY_HERE"
-sadcaptcha = SeleniumSolver(driver, api_key)
+driver = make_undetected_chromedriver_solver(api_key) # Returns uc.Chrome instance
+stealth(driver) # Add stealth if needed
+# ... [The rest of your code that accesses temu goes here]
 
-# Selenium code that causes a Temu captcha...
-
-sadcaptcha.solve_captcha_if_present(retries=5)
+# Now temu captchas will be automatically solved!
 ```
-
-It is crucial that you use `undetected_chromedriver` with the default configuration, instead of the standard Selenium chromedriver.
-Failure to use the `undetected_chromedriver` will result in "Verification failed" when attempting to solve the captcha.
+You may also pass `ChromeOptions` to `make_undetected_chromedriver_solver()`, as well as keyword arguments for `uc.Chrome()`.
 
 ## Playwright Client
-Import the package, set up the `PlaywrightSolver` class, and call it whenever you need.
-This turns the entire captcha detection, solution, retry, and verification process into a single line of code.
-It is the recommended method if you are using playwright.
-
+Import the function `make_playwright_solver_context`
+This function will create a playwright BrowserContext instance patched with the temu Captcha Solver chrome extension.
+The extension will automatically detect and solve the captcha in the background, and there is nothing further you need to do.
 
 ```py
-from temu_captcha_solver import PlaywrightSolver
-from playwright.sync_api import Page, sync_playwright
-from playwright_stealth import stealth_sync, StealthConfig
+from temu_captcha_solver import make_playwright_solver_context
+from playwright.sync_api import sync_playwright
 
 api_key = "YOUR_API_KEY_HERE"
-
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=False)
-    page = browser.new_page()
-    config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
-    stealth_sync(page, config) # Use correct playwright_stealth configuration!
-    
-    # Playwright code that causes a Temu captcha...
+    context = make_playwright_solver_context(p, api_key) # Returns playwright BrowserContext instance
+    # ... [The rest of your code that accesses temu goes here]
 
-    sadcaptcha = PlaywrightSolver(page, api_key)
-    sadcaptcha.solve_captcha_if_present(retries=5)
+# Now temu captchas will be automatically solved!
 ```
-It is crucial that users of the Playwright client also use `playwright-stealth` with the configuration specified above.
-Failure to use the `playwright-stealth` plugin will result in "Verification failed" when attempting to solve the captcha.
+You may also pass keyword args to this function, which will be passed directly to playwright's call to `playwright.chromium.launch_persistent_context()`.
+By default, the user data directory is a tempory directory that is deleted at the end of runtime.
 
 ## Async Playwright Client
-Import the package, set up the `AsyncPlaywrightSolver` class, and call it whenever you need.
-This turns the entire captcha detection, solution, retry, and verification process into a single line of code.
-It is the recommended method if you are using async playwright.
-
-
+Import the function `make_async_playwright_solver_context`
+This function will create an async playwright BrowserContext instance patched with the temu Captcha Solver chrome extension.
+The extension will automatically detect and solve the captcha in the background, and there is nothing further you need to do.
 
 ```py
 import asyncio
-from temu_captcha_solver import AsyncPlaywrightSolver
-from playwright.async_api import Page, async_playwright
-from playwright_stealth import stealth_async, StealthConfig
+from playwright.async_api import async_playwright
+from temu_captcha_solver import make_async_playwright_solver_context
 
-api_key = "YOUR_API_KEY_HERE"
-
-async def main()
+async def main():
+    api_key = "YOUR_API_KEY_HERE"
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        page = await browser.new_page()
-        config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
-        await stealth_async(page, config) # Use correct playwright_stealth configuration!
-        
-        # Playwright code that causes a Temu captcha...
-
-        sadcaptcha = AsyncPlaywrightSolver(page, api_key)
-        await sadcaptcha.solve_captcha_if_present(retries=5)
+        context = await make_async_playwright_solver_context(p, api_key) # Returns playwright BrowserContext instance
+        # ... [The rest of your code that accesses temu goes here]
 
 asyncio.run(main())
+
+# Now temu captchas will be automatically solved!
 ```
-It is crucial that users of the Playwright client also use `playwright-stealth` with the stealth configuration specified above.
-Failure to use the `playwright-stealth` plugin will result in "Verification failed" when attempting to solve the captcha.
-
-## Handling new tabs
-Temu likes to open links in new tabs.
-Since Playwright and Selenium don't automatically switch to new tabs, the solver will not work on new tabs.
-When a new tab is created, you must switch to it manually with your driver.
-Here's how to do it in playwright and selenium:
-```py
-# Switching tabs with Selenium:
-new_window = driver.window_handles[-1]
-driver.switch_to.window(new_window)
-...
-
-# Switching tabs with Playwright
-try:
-    with page.expect_popup(timeout=1000) as popup_info:
-        new_page = popup_info.value
-        ...
-except TimeoutError as e:
-    print("no new tab present")
-
-```
-
-## Using Proxies and Custom Headers
-SadCaptcha supports using proxies and custom headers such as user agent.
-This is useful to avoid detection.
-To implement this feature, pass your proxy URL and headers dictionary as a keyword argument to the constructor of the solver.
-```py
-api_key = "YOUR_API_KEY_HERE"
-proxy = "http://username:password@123.0.1.2:80"
-headers = {"User-Agent": "Chrome"}
-
-# With Selenium Solver
-driver = uc.Chrome(headless=False) # Use default undetected_chromedriver configuration!
-api_key = "YOUR_API_KEY_HERE"
-sadcaptcha = SeleniumSolver(driver, api_key, proxy=proxy, headers=headers)
-
-# With Playwright Solver
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=False)
-    page = browser.new_page()
-    stealth_sync(page) # Use default playwright_stealth configuration!
-    sadcaptcha = PlaywrightSolver(page, api_key, proxy=proxy, headers=headers)
-    sadcaptcha.solve_captcha_if_present(retries=5)
-
-# With Async PlaywrightSolver
-async def main()
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
-        page = await browser.new_page()
-        await stealth_async(page) # Use default playwright_stealth configuration!
-        sadcaptcha = AsyncPlaywrightSolver(page, api_key, headers=headers, proxy=proxy)
-        await sadcaptcha.solve_captcha_if_present(retries=5)
-```
+You may also pass keyword args to this function, which will be passed directly to playwright's call to `playwright.chromium.launch_persistent_context()`.
+By default, the user data directory is a tempory directory that is deleted at the end of runtime.
 
 ## Contact
 - Homepage: https://www.sadcaptcha.com/
